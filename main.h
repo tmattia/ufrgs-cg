@@ -6,6 +6,9 @@
 
 #define MAX_TRIANGLES 100000
 
+#define OPENGL_WINDOW   0
+#define CLOSE2GL_WINDOW 1
+
 using namespace std;
 
 /**
@@ -132,9 +135,9 @@ class Model
 };
 
 /*
- * Main window id
+ * Window ids
  */
-int window_id;
+int win_id[2];
 
 /*
  * Model file text field
@@ -169,8 +172,13 @@ Model *m;
 void read_file(int i);
 
 /**
- * GLUT render function
+ * OpenGL render function
  */
-void render();
+void renderOpenGL();
+
+/**
+ * Close2GL render function
+ */
+void renderClose2GL();
 
 int main(int argc, char *argv[]);

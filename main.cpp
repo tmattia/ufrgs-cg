@@ -156,7 +156,12 @@ void read_file(int i)
 
 // GLUT --------------------------------------------------------
 
-void render()
+void renderOpenGL()
+{
+
+}
+
+void renderClose2GL()
 {
 
 }
@@ -164,20 +169,12 @@ void render()
 // /GLUT -------------------------------------------------------
 
 
-int main(int argc, char *argv[])
+// GUI ---------------------------------------------------------
+
+void create_gui()
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA);
-
-    glutInitWindowPosition(0, 0);
-    glutInitWindowSize(640, 480);
-    window_id = glutCreateWindow("INF01009 - Trabalho de Implementação 2");
-
-    glutDisplayFunc(render);
-
-    // create GUI
-    GLUI *glui = GLUI_Master.create_glui("Options", false, 640, 0);
-    glui->set_main_gfx_window(window_id);
+    GLUI *glui = GLUI_Master.create_glui("Options", false, 1000, 0);
+    glui->set_main_gfx_window(win_id[OPENGL_WINDOW]);
 
     // primitives
     GLUI_Panel *primitives_panel = glui->add_panel("Primitives");
@@ -222,8 +219,38 @@ int main(int argc, char *argv[])
     glui->add_separator();
     glui->add_statictext("Model File");
     file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, 0, read_file);
+}
 
-    glClearColor(0.35f, 0.53f, 0.7f, 1.0f);
+
+int main(int argc, char *argv[])
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+
+    // initialize OpenGL window
+    glutInitWindowPosition(0, 0);
+    glutInitWindowSize(500, 375);
+    win_id[OPENGL_WINDOW] = glutCreateWindow("OpenGL");
+    glutDisplayFunc(renderOpenGL);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glClearColor(0, 0, 0, 0);
+    glEnable(GL_DEPTH_TEST);
+
+    // initialize Close2GL window
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowPosition(500, 0);
+    glutInitWindowSize(500, 375);
+    win_id[CLOSE2GL_WINDOW] = glutCreateWindow("Close2GL");
+    glutDisplayFunc(renderClose2GL);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
+    glClearColor(0, 0, 0, 0);
+    glEnable(GL_DEPTH_TEST);
+
+    // create GUI
+    create_gui();
+
+    // GLUT main loop
     glutMainLoop();
     return 0;
 }
