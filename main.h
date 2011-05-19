@@ -2,8 +2,9 @@
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
 #include <GLUI/glui.h>
-
 #include <vector3f.h>
+
+#define MAX_TRIANGLES 100000
 
 using namespace std;
 
@@ -21,10 +22,29 @@ struct options {
     int camera_centered;
 };
 
-/**
- * GLUT render function
+/*
+ * Triangle structure (read from model file)
  */
-void render();
+struct triangle {
+    vector3f v0;
+    vector3f v1;
+    vector3f v2;
+    vector3f normal[3];
+    vector3f face_normal;
+    char color[3];
+};
+
+/**
+ * Model's bounding box
+ */
+struct bounding_box {
+    float x_min;
+    float x_max;
+    float y_min;
+    float y_max;
+    float z_min;
+    float z_max;
+};
 
 class Camera
 {
@@ -96,5 +116,61 @@ class Camera
         float hFov;
         float vFov;
 };
+
+class Model
+{
+    public:
+        Model(const char *path);
+        ~Model();
+
+    private:
+        void read_file(const char *path);
+
+        bounding_box bbox;
+        int triangles_count;
+        triangle triangles[MAX_TRIANGLES];
+};
+
+/*
+ * Main window id
+ */
+int window_id;
+
+/*
+ * Model file text field
+ */
+GLUI_EditText *file;
+
+/*
+ * Near clipping plane text field
+ */
+GLUI_EditText *near;
+
+/*
+ * Far clipping plane text field
+ */
+GLUI_EditText *far;
+
+/*
+ * Viewing Options
+ */
+options opt;
+
+/*
+ * Model (read from file)
+ */
+Model *m;
+
+/**
+ * File text field callback handler
+ *
+ * Creates a new model and stores it in the model global variable
+ */
+void read_file(int i);
+
+/**
+ * GLUT render function
+ */
+void render();
 
 int main(int argc, char *argv[]);
