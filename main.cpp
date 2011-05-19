@@ -1,79 +1,36 @@
-#include <vector3f.h>
+#include <main.h>
 
-using namespace std;
+// -------------------- GUI GLOBALS --------------------
+
+/*
+ * Main window id
+ */
+int window_id;
+
+/*
+ * Model file text field
+ */
+GLUI_EditText *file;
+
+/*
+ * Near clipping plane text field
+ */
+GLUI_EditText *near;
+
+/*
+ * Far clipping plane text field
+ */
+GLUI_EditText *far;
+
+/*
+ * Viewing Options
+ */
+options opt;
+
+// /GUI GLOBALS ----------------------------------------
+
 
 // CAMERA ------------------------------------------------------
-class Camera
-{
-
-    public:
-        Camera();
-        ~Camera();
-
-        /**
-         * Resets the camera to it's default position
-         *
-         * position = (0, 0, 0)
-         * u = (1, 0, 0)
-         * v = (0, 1, 0)
-         * n = (0, 0, 1)
-         * hFov = 60
-         * vFov = 60
-         */
-        void reset();
-
-        /**
-         * Slides (translates) the camera over it's own coordinate system
-         *
-         * @param du Translation in u
-         * @param dv Translation in v
-         * @param dn Translation in n
-         */
-        void slide(float du, float dv, float dn);
-
-        /**
-         * Rotates the CCS around a vector defined by the cross
-         * product between two vectors
-         *
-         * @param a     First vector
-         * @param b     Second vector
-         * @param angle Rotation angle (in degrees)
-         */
-        void rotate(vector3f &a, vector3f &b, float angle);
-
-        /**
-         * Rotates the camera around n
-         *
-         * @param angle Rotation angle (in degrees)
-         */
-        void roll(float angle);
-
-        /**
-         * Rotates the camera around u
-         *
-         * @param angle Rotation angle (in degrees)
-         */
-        void pitch(float angle);
-
-        /**
-         * Rotates the camera around v
-         *
-         * @param angle Rotation angle (in degrees)
-         */
-        void yaw(float angle);
-
-
-    private:
-        vector3f u;
-        vector3f v;
-        vector3f n;
-
-        vector3f position;
-
-        float hFov;
-        float vFov;
-};
-
 Camera::Camera()
 {
     reset();
@@ -81,7 +38,6 @@ Camera::Camera()
 
 Camera::~Camera()
 {
-
 }
 
 void Camera::reset()
@@ -125,9 +81,78 @@ void Camera::yaw(float angle)
 {
     rotate(u, n, angle);
 }
-// /CAMERA -----------------------------------------------------
+// /CAMERA ------------------------------------------------------
 
-int main()
+
+// GLUT ---------------------------------------------------------
+
+void render()
 {
+
+}
+
+// /GLUT --------------------------------------------------------
+
+int main(int argc, char *argv[])
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA);
+
+    glutInitWindowPosition(0, 0);
+    glutInitWindowSize(640, 480);
+    window_id = glutCreateWindow("INF01009 - Trabalho de Implementação 2");
+
+    glutDisplayFunc(render);
+
+    // create GUI
+    GLUI *glui = GLUI_Master.create_glui("Options", false, 640, 0);
+    glui->set_main_gfx_window(window_id);
+
+    // primitives
+    GLUI_Panel *primitives_panel = glui->add_panel("Primitives");
+    GLUI_RadioGroup *primitives = glui->add_radiogroup_to_panel(primitives_panel, &opt.primitives);
+    glui->add_radiobutton_to_group(primitives, "Points");
+    glui->add_radiobutton_to_group(primitives, "Wireframe");
+    glui->add_radiobutton_to_group(primitives, "Solid");
+
+    // lighting
+    glui->add_checkbox("Lighting", &opt.lighting);
+
+    // backface orientation
+    glui->add_checkbox("CCW", &opt.ccw);
+
+    // backface culling
+    glui->add_checkbox("Backface Culling", &opt.backface_culling);
+
+    // reset camera
+    GLUI_Panel *camera_panel = glui->add_panel("Camera");
+    glui->add_checkbox_to_panel(camera_panel, "Centered on Object", &opt.camera_centered);
+    glui->add_button_to_panel(camera_panel, "Reset");
+
+    // near and far clipping planes
+    glui->add_separator();
+    glui->add_statictext("Clipping Planes");
+    near = glui->add_edittext("Near:", GLUI_EDITTEXT_FLOAT);
+    far = glui->add_edittext("Far:", GLUI_EDITTEXT_FLOAT);
+    near->set_text("1.0");
+    far->set_text("3000.0");
+
+    // RGB colors of the models
+    glui->add_separator();
+    glui->add_statictext("Model Colors");
+    GLUI_Spinner *r = glui->add_spinner("R:", GLUI_SPINNER_FLOAT, &opt.r);
+    r->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+    GLUI_Spinner *g = glui->add_spinner("G:", GLUI_SPINNER_FLOAT, &opt.g);
+    g->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+    GLUI_Spinner *b = glui->add_spinner("B:", GLUI_SPINNER_FLOAT, &opt.b);
+    b->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+
+    // read model file
+    glui->add_separator();
+    glui->add_statictext("Model File");
+    file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT);
+
+    glClearColor(0.35f, 0.53f, 0.7f, 1.0f);
+    glutMainLoop();
     return 0;
 }
