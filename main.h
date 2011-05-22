@@ -126,11 +126,38 @@ class Model
         Model(const char *path);
         ~Model();
 
+        /**
+         * Holds the coordinates of the object's bounding box
+         */
+        vector3f *center;
+
     private:
+        /**
+         * Reads a model file from the filesystem. Stores the model as
+         * an array of triangles and a bounding box
+         *
+         * @param path Full path to the file
+         */
         void read_file(const char *path);
 
+        /**
+         * Calculates the center of the object's bounding box
+         */
+        void find_center();
+
+        /**
+         * Object's bounding box
+         */
         bounding_box bbox;
+
+        /**
+         * Total number of triangles in the object
+         */
         int triangles_count;
+
+        /**
+         * All the triangles which compose the object
+         */
         triangle triangles[MAX_TRIANGLES];
 };
 

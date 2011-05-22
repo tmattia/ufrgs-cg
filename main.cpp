@@ -59,6 +59,15 @@ void Camera::yaw(float angle)
 Model::Model(const char *path)
 {
     read_file(path);
+    find_center();
+}
+
+void Model::find_center()
+{
+    center = new vector3f();
+    center->x = bbox.x_min + abs((bbox.x_max - bbox.x_min) / 2.0);
+    center->y = bbox.y_min + abs((bbox.y_max - bbox.y_min) / 2.0);
+    center->z = bbox.z_min + abs((bbox.z_max - bbox.z_min) / 2.0);
 }
 
 void Model::read_file(const char *path)
@@ -149,6 +158,7 @@ void read_file(int i)
 {
     // create new model from given file
     m = new Model(file->get_text());
+    cout << m->center->x << " " << m->center->y << " " << m->center->z << endl;
 }
 
 // /MODEL ------------------------------------------------------
@@ -158,7 +168,6 @@ void read_file(int i)
 
 void renderOpenGL()
 {
-
 }
 
 void reshapeOpenGL(int w, int h)
