@@ -161,9 +161,28 @@ void renderOpenGL()
 
 }
 
+void reshapeOpenGL(int w, int h)
+{
+    glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    //gluPerspective(vFov, hFov / vFov, atof(near->get_text()), atof(far->get_text()));
+    gluPerspective(90.0, 500.0 / 375.0, atof(near->get_text()), atof(far->get_text()));
+    glMatrixMode(GL_MODELVIEW);
+}
+
 void renderClose2GL()
 {
 
+}
+
+void reshapeClose2GL(int w, int h)
+{
+    glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, 1, 0, 1);
+    glMatrixMode(GL_MODELVIEW);
 }
 
 // /GLUT -------------------------------------------------------
@@ -232,6 +251,7 @@ int main(int argc, char *argv[])
     glutInitWindowSize(500, 375);
     win_id[OPENGL_WINDOW] = glutCreateWindow("OpenGL");
     glutDisplayFunc(renderOpenGL);
+    glutReshapeFunc(reshapeOpenGL);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glClearColor(0, 0, 0, 0);
     glEnable(GL_DEPTH_TEST);
@@ -242,6 +262,7 @@ int main(int argc, char *argv[])
     glutInitWindowSize(500, 375);
     win_id[CLOSE2GL_WINDOW] = glutCreateWindow("Close2GL");
     glutDisplayFunc(renderClose2GL);
+    glutReshapeFunc(reshapeClose2GL);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
     glClearColor(0, 0, 0, 0);

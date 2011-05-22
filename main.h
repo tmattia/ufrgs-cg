@@ -177,8 +177,18 @@ void read_file(int i);
 void renderOpenGL();
 
 /**
+ * OpenGL reshape function
+ */
+void reshapeOpenGL();
+
+/**
  * Close2GL render function
  */
 void renderClose2GL();
+
+/**
+ * Close2GL reshape function
+ */
+void reshapeClose2GL();
 
 int main(int argc, char *argv[]);
