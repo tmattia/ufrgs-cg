@@ -66,6 +66,16 @@ class Model
          */
         bounding_box bbox;
 
+        /**
+         * Total number of triangles in the object
+         */
+        int triangles_count;
+
+        /**
+         * All the triangles which compose the object
+         */
+        triangle triangles[MAX_TRIANGLES];
+
     private:
         /**
          * Reads a model file from the filesystem. Stores the model as
@@ -80,15 +90,6 @@ class Model
          */
         void find_center();
 
-        /**
-         * Total number of triangles in the object
-         */
-        int triangles_count;
-
-        /**
-         * All the triangles which compose the object
-         */
-        triangle triangles[MAX_TRIANGLES];
 };
 
 class Camera
@@ -151,23 +152,48 @@ class Camera
         void yaw(float angle);
 
         /**
-         * Defines the camera's position so that it is looking at
-         * the center of a given model
+         * Defines the camera's eye position in the WCS
+         *
+         * @param x X
+         * @param y Y
+         * @param z Z
+         */
+        void set_eye(float x, float y, float z);
+
+        /**
+         * Defines the camera's look vector in the WCS
+         *
+         * @param x X
+         * @param y Y
+         * @param z Z
+         */
+        void set_look(float x, float y, float z);
+
+
+        /**
+         * Defines the camera's position and look vector
+         * so that the model fits the screen
          *
          * @param m Model object
          */
-        void set_position_from_model(Model *m);
+        void look_at_model(Model *m);
 
+        /**
+         * Horizontal FOV angle
+         */
+        float hFov;
 
-    private:
+        /*
+         * Vertical FOV angle
+         */
+        float vFov;
+
         vector3f u;
         vector3f v;
         vector3f n;
 
         vector3f position;
-
-        float hFov;
-        float vFov;
+        vector3f look;
 };
 
 
@@ -212,6 +238,13 @@ Camera *camera;
  * Creates a new model and stores it in the model global variable
  */
 void read_file(int i);
+
+/**
+ * Draws a given model
+ *
+ * @param m The model
+ */
+void draw_model(Model *m);
 
 /**
  * OpenGL render function

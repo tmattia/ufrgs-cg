@@ -52,17 +52,15 @@ void Camera::yaw(float angle)
     rotate(u, n, angle);
 }
 
-void Camera::set_position_from_model(Model *m)
+void Camera::look_at_model(Model *m)
 {
     // calculate z distance so that the model fits the screen
-    float z = m->center->z;
-    if (m->center->x > m->center->y) {
-        z += abs((m->bbox.x_max - m->bbox.x_min) / 2.0);
-    } else {
-        z += abs((m->bbox.y_max - m->bbox.y_min) / 2.0);
-    }
-
+    float z = m->bbox.z_max;
+    z += max(abs(m->bbox.x_max - m->bbox.x_min), abs(m->bbox.y_max - m->bbox.y_min));
     position.set(m->center->x, m->center->y, z);
+
+    // set new look at vector to the center of the model
+    look.set(m->center->x, m->center->y, m->center->z);
 }
 // /CAMERA -----------------------------------------------------
 
@@ -171,7 +169,26 @@ void read_file(int i)
 {
     // create new model from given file
     m = new Model(file->get_text());
-    camera->set_position_from_model(m);
+    camera->look_at_model(m);
+
+    glutSetWindow(win_id[OPENGL_WINDOW]);
+    glutPostRedisplay();
+    glutSetWindow(win_id[CLOSE2GL_WINDOW]);
+    glutPostRedisplay();
+}
+
+void draw_model(Model *m)
+{
+    for (int i = 0; i < m->triangles_count; i++) {
+        glBegin(GL_TRIANGLES);
+            glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, m->triangles[i].normal[0].z);
+            glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
+            glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, m->triangles[i].normal[1].z);
+            glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
+            glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, m->triangles[i].normal[2].z);
+            glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
+        glEnd();
+    }
 }
 
 // /MODEL ------------------------------------------------------
@@ -181,6 +198,18 @@ void read_file(int i)
 
 void renderOpenGL()
 {
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    if (m != NULL) {
+        gluLookAt(camera->position.x, camera->position.y, camera->position.z,
+                camera->look.x, camera->look.y, camera->look.z,
+                0, 1, 0);
+        draw_model(m);
+    }
+
+    glutSwapBuffers();
 }
 
 void reshapeOpenGL(int w, int h)
@@ -188,8 +217,8 @@ void reshapeOpenGL(int w, int h)
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    //gluPerspective(vFov, hFov / vFov, atof(near->get_text()), atof(far->get_text()));
-    gluPerspective(90.0, 500.0 / 375.0, atof(near->get_text()), atof(far->get_text()));
+    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
+    gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -260,6 +289,7 @@ void create_gui()
     glui->add_separator();
     glui->add_statictext("Model File");
     file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, 0, read_file);
+    file->set_text("/Users/tomasmattia/Dropbox/ufrgs/cg/trabalhos/3/cubo.in");
 }
 
 
@@ -275,8 +305,8 @@ int main(int argc, char *argv[])
     glutDisplayFunc(renderOpenGL);
     glutReshapeFunc(reshapeOpenGL);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glClearColor(0, 0, 0, 0);
     glEnable(GL_DEPTH_TEST);
+    glClearColor(0.35f, 0.53f, 0.7f, 1.0f);
 
     // initialize Close2GL window
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -287,7 +317,6 @@ int main(int argc, char *argv[])
     glutReshapeFunc(reshapeClose2GL);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
-    glClearColor(0, 0, 0, 0);
     glEnable(GL_DEPTH_TEST);
 
     // create GUI
