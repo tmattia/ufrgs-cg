@@ -51,6 +51,19 @@ void Camera::yaw(float angle)
 {
     rotate(u, n, angle);
 }
+
+void Camera::set_position_from_model(Model *m)
+{
+    // calculate z distance so that the model fits the screen
+    float z = m->center->z;
+    if (m->center->x > m->center->y) {
+        z += abs((m->bbox.x_max - m->bbox.x_min) / 2.0);
+    } else {
+        z += abs((m->bbox.y_max - m->bbox.y_min) / 2.0);
+    }
+
+    position.set(m->center->x, m->center->y, z);
+}
 // /CAMERA -----------------------------------------------------
 
 
@@ -158,7 +171,7 @@ void read_file(int i)
 {
     // create new model from given file
     m = new Model(file->get_text());
-    cout << m->center->x << " " << m->center->y << " " << m->center->z << endl;
+    camera->set_position_from_model(m);
 }
 
 // /MODEL ------------------------------------------------------
@@ -279,6 +292,9 @@ int main(int argc, char *argv[])
 
     // create GUI
     create_gui();
+
+    // setup camera
+    camera = new Camera();
 
     // GLUT main loop
     glutMainLoop();
