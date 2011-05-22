@@ -170,22 +170,17 @@ void read_file(int i)
     // create new model from given file
     m = new Model(file->get_text());
     camera->look_at_model(m);
-
-    glutSetWindow(win_id[OPENGL_WINDOW]);
-    glutPostRedisplay();
-    glutSetWindow(win_id[CLOSE2GL_WINDOW]);
-    glutPostRedisplay();
 }
 
 void draw_model(Model *m)
 {
     for (int i = 0; i < m->triangles_count; i++) {
         glBegin(GL_TRIANGLES);
-            glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, m->triangles[i].normal[0].z);
+            glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, -m->triangles[i].normal[0].z);
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
-            glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, m->triangles[i].normal[1].z);
+            glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, -m->triangles[i].normal[1].z);
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
-            glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, m->triangles[i].normal[2].z);
+            glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, -m->triangles[i].normal[2].z);
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
         glEnd();
     }
@@ -196,11 +191,75 @@ void draw_model(Model *m)
 
 // GLUT --------------------------------------------------------
 
+void idle()
+{
+    glutSetWindow(win_id[OPENGL_WINDOW]);
+    glutPostRedisplay();
+    glutSetWindow(win_id[CLOSE2GL_WINDOW]);
+    glutPostRedisplay();
+}
+
+void set_rendering_options()
+{
+    // set up lighting
+    if (opt.lighting) {
+        GLfloat ambient[] = { 0.2, 0.2, 0.2, 1.0 };
+        GLfloat diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
+        GLfloat position[] = { 10000, 10000, 10000, 0 }; // TODO refactor hard-coded values
+
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+        glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+        glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+        float color[] = {opt.r, opt.g, opt.b};
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+    } else {
+        glDisable(GL_LIGHTING);
+        glColor3f(opt.r, opt.g, opt.b);
+    }
+
+    // set up front face orientation
+    if (opt.ccw) {
+        glFrontFace(GL_CCW);
+    } else {
+        glFrontFace(GL_CW);
+    }
+
+    // set up backface culling
+    if (opt.backface_culling) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+
+    // set up rendering primitives
+    switch (opt.primitives) {
+        case 0:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            break;
+        case 1:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            break;
+        case 2:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            break;
+        default: break;
+    }
+}
+
 void renderOpenGL()
 {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(camera->vFov, 320.0 / 240.0, atof(near->get_text()), atof(far->get_text()));
+
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    set_rendering_options();
 
     if (m != NULL) {
         gluLookAt(camera->position.x, camera->position.y, camera->position.z,
@@ -245,6 +304,7 @@ void create_gui()
 {
     GLUI *glui = GLUI_Master.create_glui("Options", false, 1000, 0);
     glui->set_main_gfx_window(win_id[OPENGL_WINDOW]);
+    GLUI_Master.set_glutIdleFunc(idle);
 
     // primitives
     GLUI_Panel *primitives_panel = glui->add_panel("Primitives");
@@ -289,7 +349,7 @@ void create_gui()
     glui->add_separator();
     glui->add_statictext("Model File");
     file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, 0, read_file);
-    file->set_text("/Users/tomasmattia/Dropbox/ufrgs/cg/trabalhos/3/cubo.in");
+    file->set_text("/Users/tomasmattia/Dropbox/ufrgs/cg/trabalhos/3/vaca.in");
 }
 
 

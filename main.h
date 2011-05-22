@@ -247,6 +247,16 @@ void read_file(int i);
 void draw_model(Model *m);
 
 /**
+ * GLUT's idle function
+ */
+void idle();
+
+/**
+ * Calls all the OpenGL rendering options defined by the GUI
+ */
+void set_rendering_options();
+
+/**
  * OpenGL render function
  */
 void renderOpenGL();
