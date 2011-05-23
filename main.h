@@ -257,6 +257,11 @@ void idle();
 void set_rendering_options();
 
 /**
+ * Sets the ModelView matrix for Close2GL
+ */
+void set_modelview_matrix();
+
+/**
  * OpenGL render function
  */
 void renderOpenGL();

@@ -199,6 +199,18 @@ void idle()
     glutPostRedisplay();
 }
 
+void set_modelview_matrix()
+{
+    float m[16];
+    m[0] = camera->u.x; m[4] = camera->u.y; m[8]  = camera->u.z; m[12] = -dotProduct(camera->position, camera->u);
+    m[1] = camera->v.x; m[5] = camera->v.y; m[9]  = camera->v.z; m[13] = -dotProduct(camera->position, camera->v);
+    m[2] = camera->n.x; m[6] = camera->n.y; m[10] = camera->n.z; m[14] = -dotProduct(camera->position, camera->n);
+    m[3] = 0;   m[7] = 0;   m[11] = 0;   m[15] = 1.0;
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glLoadMatrixf(m);
+}
+
 void set_rendering_options()
 {
     // set up lighting
@@ -283,7 +295,19 @@ void reshapeOpenGL(int w, int h)
 
 void renderClose2GL()
 {
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
+    set_modelview_matrix();
+
+    set_rendering_options();
+
+    if (m != NULL) {
+        draw_model(m);
+    }
+
+    glutSwapBuffers();
 }
 
 void reshapeClose2GL(int w, int h)
@@ -291,8 +315,10 @@ void reshapeClose2GL(int w, int h)
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, 1, 0, 1);
-    glMatrixMode(GL_MODELVIEW);
+    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
+    gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
+
+    set_modelview_matrix();
 }
 
 // /GLUT -------------------------------------------------------
@@ -378,6 +404,7 @@ int main(int argc, char *argv[])
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
     glEnable(GL_DEPTH_TEST);
+    glClearColor(0.35f, 0.53f, 0.7f, 1.0f);
 
     // create GUI
     create_gui();
