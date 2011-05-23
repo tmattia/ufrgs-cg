@@ -230,6 +230,11 @@ Model *m;
 Camera *camera;
 
 /**
+ * GUI callback for resetting the camera
+ */
+void camera_reset(int id);
+
+/**
  * File text field callback handler
  *
  * Creates a new model and stores it in the model global variable
@@ -252,6 +257,12 @@ void draw_model(Model *m);
  * W: slides camera up (increase y in CCS)
  * Q: zoom out (increase z in CCS)
  * E: zoom in (decrease z in CCS)
+ * z: rotate cw around y (in CCS)
+ * Z: rotate ccw around y (in CCS)
+ * x: rotate cw around x (in CCS)
+ * X: rotate ccw around x (in CCS)
+ * c: rotate cw around z (in CCS)
+ * C: rotate ccw around z (in CCS)
  */
 void keyboard(unsigned char key, int x, int y);
 

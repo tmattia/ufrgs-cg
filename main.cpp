@@ -214,6 +214,15 @@ void draw_model(Model *m)
 
 // GLUT --------------------------------------------------------
 
+void camera_reset(int id)
+{
+    if (m == NULL) {
+        camera->reset();
+    } else {
+        camera->look_at_model(m);
+    }
+}
+
 void keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
@@ -223,6 +232,13 @@ void keyboard(unsigned char key, int x, int y)
         case 'w': camera->slide(0, 50, 0); break;
         case 'q': camera->slide(0, 0, -50); break;
         case 'e': camera->slide(0, 0, 50); break;
+
+        case 'z': camera->yaw(15); break;
+        case 'Z': camera->yaw(-15); break;
+        case 'x': camera->pitch(15); break;
+        case 'X': camera->pitch(-15); break;
+        case 'c': camera->roll(15); break;
+        case 'C': camera->roll(-15); break;
     }
 }
 
@@ -387,7 +403,7 @@ void create_gui()
     // reset camera
     GLUI_Panel *camera_panel = glui->add_panel("Camera");
     glui->add_checkbox_to_panel(camera_panel, "Centered on Object", &opt.camera_centered);
-    glui->add_button_to_panel(camera_panel, "Reset");
+    glui->add_button_to_panel(camera_panel, "Reset", 0, camera_reset);
 
     // near and far clipping planes
     glui->add_separator();
