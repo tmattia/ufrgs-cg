@@ -1,193 +1,5 @@
 #include <main.h>
 
-// CAMERA ------------------------------------------------------
-Camera::Camera()
-{
-    reset();
-}
-
-Camera::~Camera()
-{
-}
-
-void Camera::reset()
-{
-    position.set(0, 0, 0);
-    u.set(1, 0, 0);
-    v.set(0, 1, 0);
-    n.set(0, 0, 1);
-    hFov = 60;
-    vFov = 60;
-}
-
-void Camera::set(float pos_x, float pos_y, float pos_z,
-        float look_x, float look_y, float look_z,
-        float up_x, float up_y, float up_z)
-{
-    position.set(pos_x, pos_y, pos_z);
-
-    n.set(pos_x - look_x, pos_y - look_y, pos_z - look_z);
-
-    vector3f up(up_x, up_y, up_z);
-    u = crossProduct(up, n);
-
-    n.normalize();
-    u.normalize();
-
-    v = crossProduct(n, u);
-}
-
-void Camera::slide(float du, float dv, float dn)
-{
-    position.x += du * u.x + dv * v.x + dn * n.x;
-    position.y += du * u.y + dv * v.y + dn * n.y;
-    position.z += du * u.z + dv * v.z + dn * n.z;
-
-    if (opt.camera_centered) {
-        set(position.x, position.y, position.z,
-                m->center->x, m->center->y, m->center->z,
-                v.x, v.y, v.z);
-    }
-}
-
-void Camera::rotate(vector3f &a, vector3f &b, float angle)
-{
-    float ang = 3.14159265 / 180.0 * angle;
-    float C = cos(ang);
-    float S = sin(ang);
-    vector3f t(C * a.x + S * b.x, C * a.y + S * b.y, C * a.z + S * b.z);
-    b.set(-S * a.x + C * b.x, -S * a.y + C * b.y, -S * a.z + C * b.z);
-    a.set(t.x, t.y, t.z);
-}
-
-void Camera::roll(float angle)
-{
-    rotate(u, v, angle);
-}
-
-void Camera::pitch(float angle)
-{
-    rotate(n, v, angle);
-}
-
-void Camera::yaw(float angle)
-{
-    rotate(u, n, angle);
-}
-
-void Camera::look_at_model(Model *m)
-{
-    // calculate z distance so that the model fits the screen
-    float z = m->bbox.z_max;
-    z += max(abs(m->bbox.x_max - m->bbox.x_min), abs(m->bbox.y_max - m->bbox.y_min));
-
-    set(m->center->x, m->center->y, z,
-            m->center->x, m->center->y, m->center->z,
-            0, 1, 0);
-}
-// /CAMERA -----------------------------------------------------
-
-
-// MODEL -------------------------------------------------------
-
-Model::Model(const char *path)
-{
-    read_file(path);
-    find_center();
-}
-
-void Model::find_center()
-{
-    center = new vector3f();
-    center->x = bbox.x_min + abs((bbox.x_max - bbox.x_min) / 2.0);
-    center->y = bbox.y_min + abs((bbox.y_max - bbox.y_min) / 2.0);
-    center->z = bbox.z_min + abs((bbox.z_max - bbox.z_min) / 2.0);
-}
-
-void Model::read_file(const char *path)
-{
-    // open file
-    FILE *fp = fopen(path, "r");
-    if (fp == NULL) {
-        cout << "ERROR: unable to read file " << path << endl;
-        return;
-    }
-
-    char ch;
-    fscanf(fp, "%c", &ch);
-    while (ch != '\n') fscanf(fp, "%c", &ch); // skip the first line - object's name
-
-    int material_count;
-    fscanf(fp, "# triangles = %d\n", &triangles_count);
-    fscanf(fp, "Material count = %d\n", &material_count);
-
-    vector3f ambient[material_count],
-             diffuse[material_count],
-             specular[material_count];
-    float shine[material_count];
-    for (int i = 0; i < material_count; i++) {
-        fscanf(fp, "ambient color %f %f %f\n",
-                &(ambient[i].x), &(ambient[i].y), &(ambient[i].z));
-        fscanf(fp, "diffuse color %f %f %f\n",
-                &(diffuse[i].x), &(diffuse[i].y), &(diffuse[i].z));
-        fscanf(fp, "specular color %f %f %f\n",
-                &(specular[i].x), &(specular[i].y), &(specular[i].z));
-        fscanf(fp, "material shine %f\n", &(shine[i]));
-    }
-
-    fscanf(fp, "%c", &ch);
-    while (ch != '\n') fscanf(fp, "%c", &ch); // skip documentation line
-
-    int color_index[3];
-    for (int i = 0; i < triangles_count; i++) {
-        fscanf(fp, "v0 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v0.x), &(triangles[i].v0.y), &(triangles[i].v0.z),
-                &(triangles[i].normal[0].x), &(triangles[i].normal[0].y), &(triangles[i].normal[0].z),
-                &(color_index[0]));
-        fscanf(fp, "v1 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v1.x), &(triangles[i].v1.y), &(triangles[i].v1.z),
-                &(triangles[i].normal[1].x), &(triangles[i].normal[1].y), &(triangles[i].normal[1].z),
-                &(color_index[1]));
-        fscanf(fp, "v2 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v2.x), &(triangles[i].v2.y), &(triangles[i].v2.z),
-                &(triangles[i].normal[2].x), &(triangles[i].normal[2].y), &(triangles[i].normal[2].z),
-                &(color_index[2]));
-        fscanf(fp, "face normal %f %f %f\n",
-                &(triangles[i].face_normal.x),
-                &(triangles[i].face_normal.y),
-                &(triangles[i].face_normal.z));
-
-        triangles[i].color[0] = (unsigned char) (int) (255 * (diffuse[color_index[0]].x));
-        triangles[i].color[1] = (unsigned char) (int) (255 * (diffuse[color_index[0]].y));
-        triangles[i].color[2] = (unsigned char) (int) (255 * (diffuse[color_index[0]].z));
-
-        // define bounding box
-        if (triangles[i].v0.x > bbox.x_max) bbox.x_max = triangles[i].v0.x;
-        if (triangles[i].v0.x < bbox.x_min) bbox.x_min = triangles[i].v0.x;
-        if (triangles[i].v0.y > bbox.y_max) bbox.y_max = triangles[i].v0.y;
-        if (triangles[i].v0.y < bbox.y_min) bbox.y_min = triangles[i].v0.y;
-        if (triangles[i].v0.z > bbox.z_max) bbox.z_max = triangles[i].v0.z;
-        if (triangles[i].v0.z < bbox.z_min) bbox.z_min = triangles[i].v0.z;
-
-        if (triangles[i].v1.x > bbox.x_max) bbox.x_max = triangles[i].v1.x;
-        if (triangles[i].v1.x < bbox.x_min) bbox.x_min = triangles[i].v1.x;
-        if (triangles[i].v1.y > bbox.y_max) bbox.y_max = triangles[i].v1.y;
-        if (triangles[i].v1.y < bbox.y_min) bbox.y_min = triangles[i].v1.y;
-        if (triangles[i].v1.z > bbox.z_max) bbox.z_max = triangles[i].v1.z;
-        if (triangles[i].v1.z < bbox.z_min) bbox.z_min = triangles[i].v1.z;
-
-        if (triangles[i].v2.x > bbox.x_max) bbox.x_max = triangles[i].v2.x;
-        if (triangles[i].v2.x < bbox.x_min) bbox.x_min = triangles[i].v2.x;
-        if (triangles[i].v2.y > bbox.y_max) bbox.y_max = triangles[i].v2.y;
-        if (triangles[i].v2.y < bbox.y_min) bbox.y_min = triangles[i].v2.y;
-        if (triangles[i].v2.z > bbox.z_max) bbox.z_max = triangles[i].v2.z;
-        if (triangles[i].v2.z < bbox.z_min) bbox.z_min = triangles[i].v2.z;
-    }
-
-    fclose(fp);
-
-}
-
 void read_file(int i)
 {
     // create new model from given file
@@ -209,11 +21,6 @@ void draw_model(Model *m)
     }
 }
 
-// /MODEL ------------------------------------------------------
-
-
-// GLUT --------------------------------------------------------
-
 void camera_reset(int id)
 {
     if (m == NULL) {
@@ -225,14 +32,27 @@ void camera_reset(int id)
 
 void keyboard(unsigned char key, int x, int y)
 {
-    switch (key) {
-        case 'a': camera->slide(-50, 0, 0); break;
-        case 's': camera->slide(0, -50, 0); break;
-        case 'd': camera->slide(50, 0, 0); break;
-        case 'w': camera->slide(0, 50, 0); break;
-        case 'q': camera->slide(0, 0, -50); break;
-        case 'e': camera->slide(0, 0, 50); break;
+    if (opt.camera_centered) {
+        switch (key) {
+            case 'a': camera->slide_around_model(m, -50, 0, 0); break;
+            case 's': camera->slide_around_model(m, 0, -50, 0); break;
+            case 'd': camera->slide_around_model(m, 50, 0, 0); break;
+            case 'w': camera->slide_around_model(m, 0, 50, 0); break;
+            case 'q': camera->slide_around_model(m, 0, 0, -50); break;
+            case 'e': camera->slide_around_model(m, 0, 0, 50); break;
+        }
+    } else {
+        switch (key) {
+            case 'a': camera->slide(-50, 0, 0); break;
+            case 's': camera->slide(0, -50, 0); break;
+            case 'd': camera->slide(50, 0, 0); break;
+            case 'w': camera->slide(0, 50, 0); break;
+            case 'q': camera->slide(0, 0, -50); break;
+            case 'e': camera->slide(0, 0, 50); break;
+        }
+    }
 
+    switch (key) {
         case 'z': camera->yaw(15); break;
         case 'Z': camera->yaw(-15); break;
         case 'x': camera->pitch(15); break;
