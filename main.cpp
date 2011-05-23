@@ -20,11 +20,34 @@ void Camera::reset()
     vFov = 60;
 }
 
+void Camera::set(float pos_x, float pos_y, float pos_z,
+        float look_x, float look_y, float look_z,
+        float up_x, float up_y, float up_z)
+{
+    position.set(pos_x, pos_y, pos_z);
+
+    n.set(pos_x - look_x, pos_y - look_y, pos_z - look_z);
+
+    vector3f up(up_x, up_y, up_z);
+    u = crossProduct(up, n);
+
+    n.normalize();
+    u.normalize();
+
+    v = crossProduct(n, u);
+}
+
 void Camera::slide(float du, float dv, float dn)
 {
     position.x += du * u.x + dv * v.x + dn * n.x;
     position.y += du * u.y + dv * v.y + dn * n.y;
     position.z += du * u.z + dv * v.z + dn * n.z;
+
+    if (opt.camera_centered) {
+        set(position.x, position.y, position.z,
+                m->center->x, m->center->y, m->center->z,
+                v.x, v.y, v.z);
+    }
 }
 
 void Camera::rotate(vector3f &a, vector3f &b, float angle)
@@ -57,10 +80,10 @@ void Camera::look_at_model(Model *m)
     // calculate z distance so that the model fits the screen
     float z = m->bbox.z_max;
     z += max(abs(m->bbox.x_max - m->bbox.x_min), abs(m->bbox.y_max - m->bbox.y_min));
-    position.set(m->center->x, m->center->y, z);
 
-    // set new look at vector to the center of the model
-    look.set(m->center->x, m->center->y, m->center->z);
+    set(m->center->x, m->center->y, z,
+            m->center->x, m->center->y, m->center->z,
+            0, 1, 0);
 }
 // /CAMERA -----------------------------------------------------
 
@@ -191,6 +214,18 @@ void draw_model(Model *m)
 
 // GLUT --------------------------------------------------------
 
+void keyboard(unsigned char key, int x, int y)
+{
+    switch (key) {
+        case 'a': camera->slide(-50, 0, 0); break;
+        case 's': camera->slide(0, -50, 0); break;
+        case 'd': camera->slide(50, 0, 0); break;
+        case 'w': camera->slide(0, 50, 0); break;
+        case 'q': camera->slide(0, 0, -50); break;
+        case 'e': camera->slide(0, 0, 50); break;
+    }
+}
+
 void idle()
 {
     glutSetWindow(win_id[OPENGL_WINDOW]);
@@ -205,7 +240,7 @@ void set_modelview_matrix()
     m[0] = camera->u.x; m[4] = camera->u.y; m[8]  = camera->u.z; m[12] = -dotProduct(camera->position, camera->u);
     m[1] = camera->v.x; m[5] = camera->v.y; m[9]  = camera->v.z; m[13] = -dotProduct(camera->position, camera->v);
     m[2] = camera->n.x; m[6] = camera->n.y; m[10] = camera->n.z; m[14] = -dotProduct(camera->position, camera->n);
-    m[3] = 0;   m[7] = 0;   m[11] = 0;   m[15] = 1.0;
+    m[3] = 0;           m[7] = 0;           m[11] = 0;           m[15] = 1.0;
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glLoadMatrixf(m);
@@ -275,8 +310,9 @@ void renderOpenGL()
 
     if (m != NULL) {
         gluLookAt(camera->position.x, camera->position.y, camera->position.z,
-                camera->look.x, camera->look.y, camera->look.z,
-                0, 1, 0);
+                camera->position.x - camera->n.x, camera->position.y - camera->n.y, camera->position.z - camera->n.z,
+                camera->v.x, camera->v.y, camera->v.z);
+                //0, 1, 0);
         draw_model(m);
     }
 
@@ -390,6 +426,7 @@ int main(int argc, char *argv[])
     win_id[OPENGL_WINDOW] = glutCreateWindow("OpenGL");
     glutDisplayFunc(renderOpenGL);
     glutReshapeFunc(reshapeOpenGL);
+    glutKeyboardFunc(keyboard);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.35f, 0.53f, 0.7f, 1.0f);
@@ -401,6 +438,7 @@ int main(int argc, char *argv[])
     win_id[CLOSE2GL_WINDOW] = glutCreateWindow("Close2GL");
     glutDisplayFunc(renderClose2GL);
     glutReshapeFunc(reshapeClose2GL);
+    glutKeyboardFunc(keyboard);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
     glEnable(GL_DEPTH_TEST);

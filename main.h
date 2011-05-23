@@ -112,6 +112,23 @@ class Camera
         void reset();
 
         /**
+         * Sets the camera
+         *
+         * @param pos_x Eye X
+         * @param pos_y Eye Y
+         * @param pos_z Eye Z
+         * @param look_x Look X
+         * @param look_y Look Y
+         * @param look_z Look Z
+         * @param up_x Up X
+         * @param up_y Up Y
+         * @param up_z Up Z
+         */
+        void set(float pos_x, float pos_y, float pos_z,
+                float look_x, float look_y, float look_z,
+                float up_x, float up_y, float up_z);
+
+        /**
          * Slides (translates) the camera over it's own coordinate system
          *
          * @param du Translation in u
@@ -152,25 +169,6 @@ class Camera
         void yaw(float angle);
 
         /**
-         * Defines the camera's eye position in the WCS
-         *
-         * @param x X
-         * @param y Y
-         * @param z Z
-         */
-        void set_eye(float x, float y, float z);
-
-        /**
-         * Defines the camera's look vector in the WCS
-         *
-         * @param x X
-         * @param y Y
-         * @param z Z
-         */
-        void set_look(float x, float y, float z);
-
-
-        /**
          * Defines the camera's position and look vector
          * so that the model fits the screen
          *
@@ -193,7 +191,6 @@ class Camera
         vector3f n;
 
         vector3f position;
-        vector3f look;
 };
 
 
@@ -245,6 +242,18 @@ void read_file(int i);
  * @param m The model
  */
 void draw_model(Model *m);
+
+/**
+ * Keyboard function
+ *
+ * A: slides camera to the left (decreases x in  CCS)
+ * S: slides camera down (decrease y in CCS)
+ * D: slides camera to the right (increase x in CCS)
+ * W: slides camera up (increase y in CCS)
+ * Q: zoom out (increase z in CCS)
+ * E: zoom in (decrease z in CCS)
+ */
+void keyboard(unsigned char key, int x, int y);
 
 /**
  * GLUT's idle function
