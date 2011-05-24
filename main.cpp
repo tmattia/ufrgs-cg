@@ -5,6 +5,7 @@ void read_file(int i)
     // create new model from given file
     m = new Model(file->get_text());
     camera->look_at_model(m);
+    idle(0);
 }
 
 void draw_model(Model *m)
@@ -21,6 +22,71 @@ void draw_model(Model *m)
     }
 }
 
+void draw_model_close2gl(Model *m)
+{
+    float *v0 = new float[4];
+    float *v1 = new float[4];
+    float *v2 = new float[4];
+    for (int i = 0; i < m->triangles_count; i++) {
+        // transform points to homogeneous coordinates
+        v0[0] = m->triangles[i].v0.x;
+        v0[1] = m->triangles[i].v0.y;
+        v0[2] = m->triangles[i].v0.z;
+        v0[3] = 1;
+
+        v1[0] = m->triangles[i].v1.x;
+        v1[1] = m->triangles[i].v1.y;
+        v1[2] = m->triangles[i].v1.z;
+        v1[3] = 1;
+
+        v2[0] = m->triangles[i].v2.x;
+        v2[1] = m->triangles[i].v2.y;
+        v2[2] = m->triangles[i].v2.z;
+        v2[3] = 1;
+
+
+        // modelview transformation
+        v0 = *modelview * v0;
+        v1 = *modelview * v1;
+        v2 = *modelview * v2;
+
+        // projection transformation
+        v0 = *projection * v0;
+        v1 = *projection * v1;
+        v2 = *projection * v2;
+
+        // clipping
+        if (abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
+                abs(v1[0]) <= abs(v1[3]) && abs(v1[1]) <= abs(v1[3]) && abs(v1[2]) <= abs(v1[3]) &&
+                abs(v2[0]) <= abs(v2[3]) && abs(v2[1]) <= abs(v2[3]) && abs(v2[2]) <= abs(v2[3])) {
+            // perspective division
+            v0[0] = v0[0] / v0[3];
+            v0[1] = v0[1] / v0[3];
+            v0[2] = v0[2] / v0[3];
+
+            v1[0] = v1[0] / v1[3];
+            v1[1] = v1[1] / v1[3];
+            v1[2] = v1[2] / v1[3];
+
+            v2[0] = v2[0] / v2[3];
+            v2[1] = v2[1] / v2[3];
+            v2[2] = v2[2] / v2[3];
+
+            // viewport transformation
+            v0 = *viewport * v0;
+            v1 = *viewport * v1;
+            v2 = *viewport * v2;
+
+            // drawing
+            glBegin(GL_TRIANGLES);
+            glVertex2f(v0[0], v0[1]);
+            glVertex2f(v1[0], v1[1]);
+            glVertex2f(v2[0], v2[1]);
+            glEnd();
+        }
+    }
+}
+
 void camera_reset(int id)
 {
     if (m == NULL) {
@@ -28,6 +94,7 @@ void camera_reset(int id)
     } else {
         camera->look_at_model(m);
     }
+    idle(0);
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -60,9 +127,11 @@ void keyboard(unsigned char key, int x, int y)
         case 'c': camera->roll(15); break;
         case 'C': camera->roll(-15); break;
     }
+
+    idle(0);
 }
 
-void idle()
+void idle(int id)
 {
     glutSetWindow(win_id[OPENGL_WINDOW]);
     glutPostRedisplay();
@@ -72,14 +141,38 @@ void idle()
 
 void set_modelview_matrix()
 {
-    float m[16];
-    m[0] = camera->u.x; m[4] = camera->u.y; m[8]  = camera->u.z; m[12] = -dotProduct(camera->position, camera->u);
-    m[1] = camera->v.x; m[5] = camera->v.y; m[9]  = camera->v.z; m[13] = -dotProduct(camera->position, camera->v);
-    m[2] = camera->n.x; m[6] = camera->n.y; m[10] = camera->n.z; m[14] = -dotProduct(camera->position, camera->n);
-    m[3] = 0;           m[7] = 0;           m[11] = 0;           m[15] = 1.0;
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glLoadMatrixf(m);
+    modelview = new matrix4x4f(
+            camera->u.x, camera->u.y, camera->u.z, -dotProduct(camera->position, camera->u),
+            camera->v.x, camera->v.y, camera->v.z, -dotProduct(camera->position, camera->v),
+            camera->n.x, camera->n.y, camera->n.z, -dotProduct(camera->position, camera->n),
+            0.0,         0.0,         0.0,         1.0);
+}
+
+void set_projection_matrix(float a, float n, float f)
+{
+    float t = n * tan((camera->vFov / 2.0) * (3.141592654 / 180.0));
+    float r = t * a;
+    float b = -t;
+    float l = -r;
+
+    float w = r - l;
+    float h = t - b;
+    float d = f - n;
+
+    projection = new matrix4x4f(
+            (2.0 * n) / w, 0.0,           (r + l) / w,  0.0,
+            0.0,           (2.0 * n) / h, (t + b) / h,  0.0,
+            0.0,           0.0,           -(f + n) / d, -(2.0 * f * n) / d,
+            0.0,           0.0,           -1.0,         0.0);
+}
+
+void set_viewport_matrix(float lv, float rv, float bv, float tv)
+{
+    viewport = new matrix4x4f(
+            (rv - lv) / 2.0, 0.0,             0.0, (lv + rv) / 2.0,
+            0.0,             (tv - bv) / 2.0, 0.0, (bv + tv) / 2.0,
+            0.0,             0.0,             1.0, 0.0,
+            0.0,             0.0,             0.0, 1.0);
 }
 
 void set_rendering_options()
@@ -134,10 +227,6 @@ void set_rendering_options()
 
 void renderOpenGL()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(camera->vFov, 320.0 / 240.0, atof(near->get_text()), atof(far->get_text()));
-
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -176,7 +265,7 @@ void renderClose2GL()
     set_rendering_options();
 
     if (m != NULL) {
-        draw_model(m);
+        draw_model_close2gl(m);
     }
 
     glutSwapBuffers();
@@ -187,10 +276,13 @@ void reshapeClose2GL(int w, int h)
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
-    gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
+    gluOrtho2D(-1, 1, -1, 1);
 
-    set_modelview_matrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
+    set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
+    set_viewport_matrix(-1, 1, -1, 1);
 }
 
 // /GLUT -------------------------------------------------------
@@ -202,27 +294,26 @@ void create_gui()
 {
     GLUI *glui = GLUI_Master.create_glui("Options", false, 1000, 0);
     glui->set_main_gfx_window(win_id[OPENGL_WINDOW]);
-    GLUI_Master.set_glutIdleFunc(idle);
 
     // primitives
     GLUI_Panel *primitives_panel = glui->add_panel("Primitives");
-    GLUI_RadioGroup *primitives = glui->add_radiogroup_to_panel(primitives_panel, &opt.primitives);
+    GLUI_RadioGroup *primitives = glui->add_radiogroup_to_panel(primitives_panel, &opt.primitives, 0, idle);
     glui->add_radiobutton_to_group(primitives, "Points");
     glui->add_radiobutton_to_group(primitives, "Wireframe");
     glui->add_radiobutton_to_group(primitives, "Solid");
 
     // lighting
-    glui->add_checkbox("Lighting", &opt.lighting);
+    glui->add_checkbox("Lighting", &opt.lighting, 0, idle);
 
     // backface orientation
-    glui->add_checkbox("CCW", &opt.ccw);
+    glui->add_checkbox("CCW", &opt.ccw, 0, idle);
 
     // backface culling
-    glui->add_checkbox("Backface Culling", &opt.backface_culling);
+    glui->add_checkbox("Backface Culling", &opt.backface_culling, 0, idle);
 
     // reset camera
     GLUI_Panel *camera_panel = glui->add_panel("Camera");
-    glui->add_checkbox_to_panel(camera_panel, "Centered on Object", &opt.camera_centered);
+    glui->add_checkbox_to_panel(camera_panel, "Centered on Object", &opt.camera_centered, 0, idle);
     glui->add_button_to_panel(camera_panel, "Reset", 0, camera_reset);
 
     // near and far clipping planes
@@ -236,11 +327,11 @@ void create_gui()
     // RGB colors of the models
     glui->add_separator();
     glui->add_statictext("Model Colors");
-    GLUI_Spinner *r = glui->add_spinner("R:", GLUI_SPINNER_FLOAT, &opt.r);
+    GLUI_Spinner *r = glui->add_spinner("R:", GLUI_SPINNER_FLOAT, &opt.r, 0, idle);
     r->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
-    GLUI_Spinner *g = glui->add_spinner("G:", GLUI_SPINNER_FLOAT, &opt.g);
+    GLUI_Spinner *g = glui->add_spinner("G:", GLUI_SPINNER_FLOAT, &opt.g, 0, idle);
     g->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
-    GLUI_Spinner *b = glui->add_spinner("B:", GLUI_SPINNER_FLOAT, &opt.b);
+    GLUI_Spinner *b = glui->add_spinner("B:", GLUI_SPINNER_FLOAT, &opt.b, 0, idle);
     b->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
 
     // read model file

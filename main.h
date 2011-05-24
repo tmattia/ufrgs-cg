@@ -3,6 +3,7 @@
 #include <GLUT/glut.h>
 #include <GLUI/glui.h>
 #include <vector3f.h>
+#include <matrix4x4f.h>
 #include <model.h>
 #include <camera.h>
 
@@ -29,6 +30,21 @@ struct options {
  * Window ids
  */
 int win_id[2];
+
+/**
+ * Close2GL ModelView matrix
+ */
+matrix4x4f *modelview;
+
+/**
+ * Close2GL Projection matrix
+ */
+matrix4x4f *projection;
+
+/**
+ * Close2GL Viewport matrix
+ */
+matrix4x4f *viewport;
 
 /*
  * Model file text field
@@ -73,11 +89,18 @@ void camera_reset(int id);
 void read_file(int i);
 
 /**
- * Draws a given model
+ * Draws a given model in the OpenGL window
  *
  * @param m The model
  */
 void draw_model(Model *m);
+
+/**
+ * Draws a given model in the Close2GL window
+ *
+ * @param m The model
+ */
+void draw_model_close2gl(Model *m);
 
 /**
  * Keyboard function
@@ -98,9 +121,9 @@ void draw_model(Model *m);
 void keyboard(unsigned char key, int x, int y);
 
 /**
- * GLUT's idle function
+ * Idle function (used to redraw the scene)
  */
-void idle();
+void idle(int id);
 
 /**
  * Calls all the OpenGL rendering options defined by the GUI
@@ -111,6 +134,25 @@ void set_rendering_options();
  * Sets the ModelView matrix for Close2GL
  */
 void set_modelview_matrix();
+
+/**
+ * Sets the Projection matrix for Close2GL
+ *
+ * @param a Aspect ratio
+ * @param n Near clipping plane
+ * @param f Far clipping plane
+ */
+void set_projection_matrix(float a, float n, float f);
+
+/**
+ * Sets the Viewport matrix for Close2GL
+ *
+ * @param lv Left
+ * @param rv Right
+ * @param bv Bottom
+ * @param tv Top
+ */
+void set_viewport_matrix(float lv, float rv, float bv, float tv);
 
 /**
  * OpenGL render function
