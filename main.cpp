@@ -55,8 +55,18 @@ void draw_model_close2gl(Model *m)
         v1 = *projection * v1;
         v2 = *projection * v2;
 
+        // backface culling
+        bool bf = false;
+        if (opt.backface_culling) {
+            vector3f b0(v0[0] - v1[0], v0[1] - v1[1], v0[2] - v1[2]);
+            vector3f b1(v0[0] - v2[0], v0[1] - v2[1], v0[2] - v2[2]);
+            bf = dotProduct(camera->position - camera->n, crossProduct(b0, b1)) > 0;
+            if (opt.ccw) bf = !bf;
+        }
+
         // clipping
-        if (abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
+        if (!bf &&
+                abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
                 abs(v1[0]) <= abs(v1[3]) && abs(v1[1]) <= abs(v1[3]) && abs(v1[2]) <= abs(v1[3]) &&
                 abs(v2[0]) <= abs(v2[3]) && abs(v2[1]) <= abs(v2[3]) && abs(v2[2]) <= abs(v2[3])) {
             // perspective division
