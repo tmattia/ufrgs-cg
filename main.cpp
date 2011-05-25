@@ -99,9 +99,8 @@ void draw_model_close2gl(Model *m)
 
 void camera_reset(int id)
 {
-    if (m == NULL) {
-        camera->reset();
-    } else {
+    camera->reset();
+    if (m != NULL) {
         camera->look_at_model(m);
     }
     idle(0);
@@ -136,6 +135,10 @@ void keyboard(unsigned char key, int x, int y)
         case 'X': camera->pitch(-15); break;
         case 'c': camera->roll(15); break;
         case 'C': camera->roll(-15); break;
+        case 'f': camera->vFov += 5; break;
+        case 'F': camera->vFov -= 5; break;
+        case 'v': camera->hFov += 5; break;
+        case 'V': camera->hFov -= 5; break;
     }
 
     idle(0);
@@ -143,10 +146,27 @@ void keyboard(unsigned char key, int x, int y)
 
 void idle(int id)
 {
+    float scale = camera->vFov / camera->hFov;
+
+    // OpenGL
     glutSetWindow(win_id[OPENGL_WINDOW]);
     glutPostRedisplay();
+    // TODO refactor duplicated code
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
+    glMatrixMode(GL_MODELVIEW);
+
+    // Close2GL
     glutSetWindow(win_id[CLOSE2GL_WINDOW]);
     glutPostRedisplay();
+    // TODO refactor duplicated code
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1, 1, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
+    set_viewport_matrix(-1, 1, -1, 1);
 }
 
 void set_modelview_matrix()
@@ -247,7 +267,6 @@ void renderOpenGL()
         gluLookAt(camera->position.x, camera->position.y, camera->position.z,
                 camera->position.x - camera->n.x, camera->position.y - camera->n.y, camera->position.z - camera->n.z,
                 camera->v.x, camera->v.y, camera->v.z);
-                //0, 1, 0);
         draw_model(m);
     }
 
@@ -259,7 +278,7 @@ void reshapeOpenGL(int w, int h)
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
+    float scale = camera->vFov / camera->hFov;
     gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
     glMatrixMode(GL_MODELVIEW);
 }
@@ -290,7 +309,7 @@ void reshapeClose2GL(int w, int h)
 
     glMatrixMode(GL_MODELVIEW);
 
-    float scale = w > h ? (float) w / (float) h : (float) h / (float) w;
+    float scale = camera->vFov / camera->hFov;
     set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
     set_viewport_matrix(-1, 1, -1, 1);
 }
@@ -359,7 +378,7 @@ int main(int argc, char *argv[])
 
     // initialize OpenGL window
     glutInitWindowPosition(0, 0);
-    glutInitWindowSize(500, 375);
+    glutInitWindowSize(WINDOW_SIZE, WINDOW_SIZE);
     win_id[OPENGL_WINDOW] = glutCreateWindow("OpenGL");
     glutDisplayFunc(renderOpenGL);
     glutReshapeFunc(reshapeOpenGL);
@@ -370,8 +389,8 @@ int main(int argc, char *argv[])
 
     // initialize Close2GL window
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowPosition(500, 0);
-    glutInitWindowSize(500, 375);
+    glutInitWindowPosition(WINDOW_SIZE, 0);
+    glutInitWindowSize(WINDOW_SIZE, WINDOW_SIZE);
     win_id[CLOSE2GL_WINDOW] = glutCreateWindow("Close2GL");
     glutDisplayFunc(renderClose2GL);
     glutReshapeFunc(reshapeClose2GL);

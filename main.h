@@ -7,6 +7,7 @@
 #include <model.h>
 #include <camera.h>
 
+#define WINDOW_SIZE 500
 #define OPENGL_WINDOW   0
 #define CLOSE2GL_WINDOW 1
 
