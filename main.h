@@ -106,7 +106,7 @@ void draw_model_close2gl(Model *m);
 /**
  * Keyboard function
  *
- * A: slides camera to the left (decreases x in  CCS)
+ * A: slides camera to the left (decreases x in CCS)
  * S: slides camera down (decrease y in CCS)
  * D: slides camera to the right (increase x in CCS)
  * W: slides camera up (increase y in CCS)
@@ -118,6 +118,10 @@ void draw_model_close2gl(Model *m);
  * X: rotate ccw around x (in CCS)
  * c: rotate cw around z (in CCS)
  * C: rotate ccw around z (in CCS)
+ * f: increases camera's vertical FOV
+ * F: decreases camera's vertical FOV
+ * v: increases camera's horizontal FOV
+ * V: decreases camera's horizontal FOV
  */
 void keyboard(unsigned char key, int x, int y);
 
