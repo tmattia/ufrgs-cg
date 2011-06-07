@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>INF01009 - Tomas Mattia</title>
+        <style type="text/css" media="screen">
+            blockquote {
+                float: left;
+            }
+            p.subtitle {
+                clear: both;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="wrapper">
+
+            <div id="header">
+                <h1>INF01009 - Computa&ccedil;&atilde;o Gr&aacute;fica</h1>
+                <h2>Tomas Mattia (180687)</h2>
+                <ul>
+                    <li><a href="#trabalho-impl-2">Trabalho Implementa&ccedil;&atilde;o 2</a></li>
+                </ul>
+            </div>
+
+            <div id="content">
+                <div id="trabalho-impl-2" class="trabalho">
+                    <h3>Trabalho de Implementa&ccedil;&atilde;o 2</h3>
+                    <h4>Ambiente de Desenvolvimento</h4>
+
+                    <ul>
+                        <li>Mac OS X (v10.6.6)</li>
+                        <li>gcc 4.2.1</li>
+                    </ul>
+
+                    <h4>Desenvolvimento</h4>
+
+                    <h5>ModelView Matrix</h5>
+                    <p>A Listagem 1 apresenta o c&oacute;digo utilizado para a transforma&ccedil;&atilde;o da ModelView Matrix, onde:</p>
+                    <ul>
+                        <li><strong>camera->v</strong> &eacute; o vetor Up da c&acirc;mera;</li>
+                        <li><strong>camera->n</strong> &eacute; o vetor LookAt da c&acirc;mera;</li>
+                        <li><strong>camera->u</strong> &eacute; um vetor unit&aacute;rio ortogonal aos vetores <strong>V</strong> e <strong>N</strong>; e</li>
+                        <li><strong>camera->position</strong> &eacute; o vetor que define a posi&ccedil;&atilde;o da c&acirc;mera em rela&ccedil;&atilde;o &agrave; origem do WCS.</li>
+                    </ul>
+                    <blockquote>
+                        <pre>
+void set_modelview_matrix()
+{
+    modelview = new matrix4x4f(
+            camera->u.x, camera->u.y, camera->u.z, -dotProduct(camera->position, camera->u),
+            camera->v.x, camera->v.y, camera->v.z, -dotProduct(camera->position, camera->v),
+            camera->n.x, camera->n.y, camera->n.z, -dotProduct(camera->position, camera->n),
+            0.0,         0.0,         0.0,         1.0);
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 1 - C&oacute;digo para ModelView Matrix</p>
+
+                    <h5>Projection Matrix</h5>
+                    <p>A Listagem 2 apresenta o c&oacute;digo utilizado para a transforma&ccedil;&atilde;o da Projection Matrix, onde:</p>
+                    <ul>
+                        <li><em>a</em> &eacute; a rela&ccedil;&atilde;o de aspecto entre o FOV vertical e horizontal da c&acirc;mera;</li>
+                        <li><em>n</em> &eacute; o Near Clipping Plane; e</li>
+                        <li><em>f</em> &eacute; o Far Clipping Plane.</li>
+                    </ul>
+                    <blockquote>
+                        <pre>
+void set_projection_matrix(float a, float n, float f)
+{
+    float t = n * tan((camera->vFov / 2.0) * (3.141592654 / 180.0));
+    float r = t * a;
+    float b = -t;
+    float l = -r;
+
+    float w = r - l;
+    float h = t - b;
+    float d = f - n;
+
+    projection = new matrix4x4f(
+            (2.0 * n) / w, 0.0,           (r + l) / w,  0.0,
+            0.0,           (2.0 * n) / h, (t + b) / h,  0.0,
+            0.0,           0.0,           -(f + n) / d, -(2.0 * f * n) / d,
+            0.0,           0.0,           -1.0,         0.0);
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 2 - C&oacute;digo para Projection Matrix</p>
+
+                    <h5>Backface Culling</h5>
+                    <p>A Listagem 3 apresenta o c&oacute;digo utilizado para o c&aacute;lculo do Backface Culling. A conta &eacute; simples:</p>
+                    <ol>
+                        <li>Determina-se dois vetores <strong>b0</strong> e <strong>b1</strong> a partir das coordenadas do tri&aacute;ngulo (<em>v0</em>, <em>v1</em> e <em>v2</em>);</li>
+                        <li>Calcula-se o produto vetorial entre <strong>b0</strong> e <strong>b1</strong> para obter a normal ao plano formado pelos dois vetores;</li>
+                        <li>Calcula-se o produto escalar entre o vetor do passo 2 e o vetor que representa o olho da c&acirc;mera;</li>
+                        <li>Se o resultado do passo 3 for positivo (ou negativo, em caso de ordena&ccedil;&atilde;o CCW dos v&eacute;rtices do tri&acirc;ngulo), isso significa que a face frontal do tri&acirc;ngulo est&aacute; &quot;de costas&quot; para a c&acirc;mera. Portanto, exclui-se o tri&acirc;ngulo da renderiza&ccedil;&atilde;o.</li>
+                    </ol>
+                    <blockquote>
+                        <pre>
+bool cull = false;
+if (opt.backface_culling) {
+    vector3f b0(v0[0] - v1[0], v0[1] - v1[1], v0[2] - v1[2]);
+    vector3f b1(v0[0] - v2[0], v0[1] - v2[1], v0[2] - v2[2]);
+    cull = dotProduct(camera->position - camera->n, crossProduct(b0, b1)) > 0;
+    if (opt.ccw) cull = !cull;
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 3 - C&oacute;digo para Backface Culling</p>
+
+                    <h5>Clipping</h5>
+                    <p>A Listagem 4 apresenta o c&oacute;digo utilizado para realizar clipping de tri&acirc;ngulos. Se o tri&acirc;ngulo n&atilde;o foi cortado pelo processo de Backface Culling e est&aacute; totalmente dentro da &aacute;rea de desenho (compara-se o m&oacute;dulo das coordenadas X, Y e Z com o m&oacute;dulo da coordenada W), ele ser&aacute; desenhado.</p>
+                    <blockquote>
+                        <pre>
+if (!cull &&
+        abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
+        abs(v1[0]) <= abs(v1[3]) && abs(v1[1]) <= abs(v1[3]) && abs(v1[2]) <= abs(v1[3]) &&
+        abs(v2[0]) <= abs(v2[3]) && abs(v2[1]) <= abs(v2[3]) && abs(v2[2]) <= abs(v2[3])) {
+    // draw triangle...
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 4 - C&oacute;digo para Culling</p>
+
+                    <h5>Divis&atilde;o Perspectiva</h5>
+                    <p>A Listagem 5 apresenta o c&oacute;digo utilizado para realizar a divis&atilde;o perspectiva, que consiste apenas em dividir todas as coordenadas dos v&eacute;rtices do tri&acirc;ngulo pela coordenada W dos mesmos.</p>
+                    <blockquote>
+                        <pre>
+v0[0] = v0[0] / v0[3];
+v0[1] = v0[1] / v0[3];
+v0[2] = v0[2] / v0[3];
+
+v1[0] = v1[0] / v1[3];
+v1[1] = v1[1] / v1[3];
+v1[2] = v1[2] / v1[3];
+
+v2[0] = v2[0] / v2[3];
+v2[1] = v2[1] / v2[3];
+v2[2] = v2[2] / v2[3];
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 5 - C&oacute;digo para Divis&atilde;o Perspectiva</p>
+
+                    <h5>Viewport Matrix</h5>
+                    <p>A Listagem 6 apresenta o c&oacute;digo utilizado para realizar a transforma&ccedil;&atilde;o da Viewport Matrix, onde:</p>
+                    <ul>
+                        <li><em>lv</em> &eacute; o canto esquerdo da janela;</li>
+                        <li><em>rv</em> &eacute; o canto direito da janela;</li>
+                        <li><em>bv</em> &eacute; o canto inferior da janela; e</li>
+                        <li><em>tv</em> &eacute; o canto superior da janela.</li>
+                    </ul>
+                    <blockquote>
+                        <pre>
+void set_viewport_matrix(float lv, float rv, float bv, float tv)
+{
+    viewport = new matrix4x4f(
+            (rv - lv) / 2.0, 0.0,             0.0, (lv + rv) / 2.0,
+            0.0,             (tv - bv) / 2.0, 0.0, (bv + tv) / 2.0,
+            0.0,             0.0,             1.0, 0.0,
+            0.0,             0.0,             0.0, 1.0);
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 6 - C&oacute;digo para Viewport Matrix</p>
+
+
+                    <h4>Resultados</h4>
+
+                    <p><img src="1-opengl.png" alt="1 - OpenGL" /><img src="1-close2gl.png" alt="1 - Close2GL" /></p>
+                    <p class="subtitle">Compara&ccedil;&atilde;o 1 - Sincroniza&ccedil;&atilde;o das duas janelas, cores, clipping (em Close2GL), movimenta&ccedil;&atilde;o da c&acirc;mera.</p>
+
+                    <p><img src="2-opengl.png" alt="2 - OpenGL" /><img src="2-close2gl.png" alt="2 - Close2GL" /></p>
+                    <p class="subtitle">Compara&ccedil;&atilde;o 2 - Mudan&ccedil;&atilde;o de vFov e hFov da c&acirc;mera e Backface Culling desativado.</p>
+
+                    <p><img src="3-opengl.png" alt="3 - OpenGL" /><img src="3-close2gl.png" alt="3 - Close2GL" /></p>
+                    <p class="subtitle">Compara&ccedil;&atilde;o 3 - Backface Culling ativado.</p>
+
+                    <p><img src="4-opengl.png" alt="4 - OpenGL" /><img src="4-close2gl.png" alt="4 - Close2GL" /></p>
+                    <p class="subtitle">Compara&ccedil;&atilde;o 4 - Far clipping plane em a&ccedil;&atilde;o.</p>
+
+                    <h4>C&oacute;digo-fonte</h4>
+                    <p><a href="http://github.com/tmattia/ufrgs-cg">http://github.com/tmattia/ufrgs-cg</a></p>
+                </div>
+            </div>
+            <div id="footer"><address>tmattia [at] inf [dot] ufrgs [dot] br</address></div>
+        </div>
+
+    </body>
+</html>
