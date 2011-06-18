@@ -305,7 +305,9 @@ void reshapeClose2GL(int w, int h)
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(-1, 1, -1, 1);
+    gluOrtho2D(0, w, 0, h);
+
+    clear_buffers(w, h);
 
     glMatrixMode(GL_MODELVIEW);
 
@@ -313,11 +315,6 @@ void reshapeClose2GL(int w, int h)
     set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
     set_viewport_matrix(-1, 1, -1, 1);
 }
-
-// /GLUT -------------------------------------------------------
-
-
-// GUI ---------------------------------------------------------
 
 void create_gui()
 {
@@ -370,6 +367,23 @@ void create_gui()
     file->set_text("/Users/tomasmattia/Dropbox/ufrgs/cg/trabalhos/3/vaca.in");
 }
 
+void clear_buffers(int w, int h)
+{
+    depth_buffer.clear();
+    color_buffer.clear();
+
+    for (int i = 0; i < w; i++) {
+        depth_buffer.push_back(vector<float>());
+        color_buffer.push_back(vector< vector<float> >());
+        for (int j = 0; j < h; j++) {
+            depth_buffer[i].push_back(0);
+            color_buffer[i].push_back(vector<float>());
+            for (int k = 0; k < 4; k++) {
+                color_buffer[i][j].push_back(0);
+            }
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {

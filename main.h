@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
 #include <GLUI/glui.h>
@@ -31,6 +32,17 @@ struct options {
  * Window ids
  */
 int win_id[2];
+
+
+/**
+ * Depth buffer
+ */
+vector< vector<float> > depth_buffer;
+
+/**
+ * Color buffer
+ */
+vector< vector< vector<float> > > color_buffer;
 
 /**
  * Close2GL ModelView matrix
@@ -178,5 +190,14 @@ void renderClose2GL();
  * Close2GL reshape function
  */
 void reshapeClose2GL();
+
+/**
+ * Clears the depth and color buffers
+ *
+ * @param w Window width
+ * @param h Window height
+ */
+void clear_buffers(int w, int h);
+
 
 int main(int argc, char *argv[]);
