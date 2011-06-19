@@ -45,6 +45,12 @@ vector< vector<float> > depth_buffer;
 vector< vector< vector<float> > > color_buffer;
 
 /**
+ * Keep track of Close2GL's window width/height
+ */
+int close2gl_window_width;
+int close2gl_window_height;
+
+/**
  * Close2GL ModelView matrix
  */
 matrix4x4f *modelview;
@@ -116,6 +122,15 @@ void draw_model(Model *m);
 void draw_model_close2gl(Model *m);
 
 /**
+ * Draw's a given triangle in the Close2GL window
+ *
+ * @param v0 Triangle's first vertex
+ * @param v1 Triangle's second vertex
+ * @param v2 Triangle's third vertex
+ */
+void draw_triangle(float* v0, float* v1, float* v2);
+
+/**
  * Keyboard function
  *
  * A: slides camera to the left (decreases x in CCS)
@@ -179,7 +194,7 @@ void renderOpenGL();
 /**
  * OpenGL reshape function
  */
-void reshapeOpenGL();
+void reshapeOpenGL(int w, int h);
 
 /**
  * Close2GL render function
@@ -189,7 +204,7 @@ void renderClose2GL();
 /**
  * Close2GL reshape function
  */
-void reshapeClose2GL();
+void reshapeClose2GL(int w, int h);
 
 /**
  * Clears the depth and color buffers

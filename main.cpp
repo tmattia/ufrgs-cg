@@ -73,14 +73,17 @@ void draw_model_close2gl(Model *m)
             v0[0] = v0[0] / v0[3];
             v0[1] = v0[1] / v0[3];
             v0[2] = v0[2] / v0[3];
+            v0[3] = v0[3] / v0[3];
 
             v1[0] = v1[0] / v1[3];
             v1[1] = v1[1] / v1[3];
             v1[2] = v1[2] / v1[3];
+            v1[3] = v1[3] / v1[3];
 
             v2[0] = v2[0] / v2[3];
             v2[1] = v2[1] / v2[3];
             v2[2] = v2[2] / v2[3];
+            v2[3] = v2[3] / v2[3];
 
             // viewport transformation
             v0 = *viewport * v0;
@@ -88,13 +91,19 @@ void draw_model_close2gl(Model *m)
             v2 = *viewport * v2;
 
             // drawing
-            glBegin(GL_TRIANGLES);
-            glVertex2f(v0[0], v0[1]);
-            glVertex2f(v1[0], v1[1]);
-            glVertex2f(v2[0], v2[1]);
-            glEnd();
+            draw_triangle(v0, v1, v2);
         }
     }
+}
+
+void draw_triangle(float* v0, float* v1, float* v2)
+{
+    // TODO rasterization
+    glBegin(GL_TRIANGLES);
+    glVertex2f(v0[0], v0[1]);
+    glVertex2f(v1[0], v1[1]);
+    glVertex2f(v2[0], v2[1]);
+    glEnd();
 }
 
 void camera_reset(int id)
@@ -150,23 +159,23 @@ void idle(int id)
 
     // OpenGL
     glutSetWindow(win_id[OPENGL_WINDOW]);
-    glutPostRedisplay();
     // TODO refactor duplicated code
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(camera->vFov, scale, atof(near->get_text()), atof(far->get_text()));
     glMatrixMode(GL_MODELVIEW);
+    glutPostRedisplay();
 
     // Close2GL
     glutSetWindow(win_id[CLOSE2GL_WINDOW]);
-    glutPostRedisplay();
     // TODO refactor duplicated code
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(-1, 1, -1, 1);
+    gluOrtho2D(0, close2gl_window_width, 0, close2gl_window_height);
     glMatrixMode(GL_MODELVIEW);
     set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
-    set_viewport_matrix(-1, 1, -1, 1);
+    set_viewport_matrix(0, close2gl_window_width, 0, close2gl_window_height);
+    glutPostRedisplay();
 }
 
 void set_modelview_matrix()
@@ -302,10 +311,13 @@ void renderClose2GL()
 
 void reshapeClose2GL(int w, int h)
 {
+    close2gl_window_width = w;
+    close2gl_window_height = h;
+
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, w, 0, h);
+    gluOrtho2D(0, close2gl_window_width, 0, close2gl_window_height);
 
     clear_buffers(w, h);
 
@@ -313,7 +325,7 @@ void reshapeClose2GL(int w, int h)
 
     float scale = camera->vFov / camera->hFov;
     set_projection_matrix(scale, atof(near->get_text()), atof(far->get_text()));
-    set_viewport_matrix(-1, 1, -1, 1);
+    set_viewport_matrix(0, close2gl_window_width, 0, close2gl_window_height);
 }
 
 void create_gui()
@@ -419,6 +431,9 @@ int main(int argc, char *argv[])
 
     // setup camera
     camera = new Camera();
+
+    close2gl_window_width = WINDOW_SIZE;
+    close2gl_window_height = WINDOW_SIZE;
 
     // GLUT main loop
     glutMainLoop();
