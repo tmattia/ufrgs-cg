@@ -24,6 +24,8 @@ void draw_model(Model *m)
 
 void draw_model_close2gl(Model *m)
 {
+    clear_buffers(close2gl_window_width, close2gl_window_height);
+
     float *v0 = new float[4];
     float *v1 = new float[4];
     float *v2 = new float[4];
@@ -94,16 +96,44 @@ void draw_model_close2gl(Model *m)
             draw_triangle(v0, v1, v2);
         }
     }
+
+    glRasterPos2i(0, 0);
+    float color_buffer_pixels[close2gl_window_height][close2gl_window_width][4];
+    for (int i = 0; i < close2gl_window_width; i++) {
+        for (int j = 0; j < close2gl_window_height; j++) {
+            for (int k = 0; k < 4; k++) {
+                color_buffer_pixels[j][i][k] = color_buffer[i][j][k];
+            }
+        }
+    }
+    glDrawPixels(close2gl_window_width, close2gl_window_height, GL_RGBA, GL_FLOAT, color_buffer_pixels);
 }
 
 void draw_triangle(float* v0, float* v1, float* v2)
 {
-    // TODO rasterization
-    glBegin(GL_TRIANGLES);
-    glVertex2f(v0[0], v0[1]);
-    glVertex2f(v1[0], v1[1]);
-    glVertex2f(v2[0], v2[1]);
-    glEnd();
+    if (v0[2] < depth_buffer[v0[0]][v0[1]]) {
+        depth_buffer[v0[0]][v0[1]] = v0[2];
+        color_buffer[v0[0]][v0[1]][0] = opt.r;
+        color_buffer[v0[0]][v0[1]][1] = opt.g;
+        color_buffer[v0[0]][v0[1]][2] = opt.b;
+        color_buffer[v0[0]][v0[1]][3] = 1;
+    }
+
+    if (v1[2] < depth_buffer[v1[0]][v1[1]]) {
+        depth_buffer[v1[0]][v1[1]] = v1[2];
+        color_buffer[v1[0]][v1[1]][0] = opt.r;
+        color_buffer[v1[0]][v1[1]][1] = opt.g;
+        color_buffer[v1[0]][v1[1]][2] = opt.b;
+        color_buffer[v1[0]][v1[1]][3] = 1;
+    }
+
+    if (v2[2] < depth_buffer[v2[0]][v2[1]]) {
+        depth_buffer[v2[0]][v2[1]] = v2[2];
+        color_buffer[v2[0]][v2[1]][0] = opt.r;
+        color_buffer[v2[0]][v2[1]][1] = opt.g;
+        color_buffer[v2[0]][v2[1]][2] = opt.b;
+        color_buffer[v2[0]][v2[1]][3] = 1;
+    }
 }
 
 void camera_reset(int id)
@@ -388,11 +418,12 @@ void clear_buffers(int w, int h)
         depth_buffer.push_back(vector<float>());
         color_buffer.push_back(vector< vector<float> >());
         for (int j = 0; j < h; j++) {
-            depth_buffer[i].push_back(0);
+            depth_buffer[i].push_back(INT_MAX);
             color_buffer[i].push_back(vector<float>());
-            for (int k = 0; k < 4; k++) {
-                color_buffer[i][j].push_back(0);
-            }
+            color_buffer[i][j].push_back(0.35);
+            color_buffer[i][j].push_back(0.53);
+            color_buffer[i][j].push_back(0.7);
+            color_buffer[i][j].push_back(1);
         }
     }
 }
