@@ -21,9 +21,9 @@ using namespace std;
 #define UI_RESET_CAMERA 1
 #define UI_READ_FILE 2
 
-#define BG_COLOR_R 0.3f
-#define BG_COLOR_G 0.5f
-#define BG_COLOR_B 0.7f
+#define BG_COLOR_R 0.0f
+#define BG_COLOR_G 0.0f
+#define BG_COLOR_B 0.0f
 #define BG_COLOR_A 1.0f
 
 #define DEFAULT_W 500
