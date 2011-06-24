@@ -306,9 +306,10 @@ void close2gl_raster_solid(int x0, int y0, int z0,
         }
     }
 
+    int avg_z = (int) (z0 + z1 + z2) / 3.0;
     for (int y = y_min; y < y_max; y++) {
         for (int x = start[y]; x < end[y]; x++) {
-            close2gl_raster_line(x, y, z0, x, y, z1);
+            close2gl_raster_line(x, y, avg_z, x, y, avg_z);
         }
     }
 
