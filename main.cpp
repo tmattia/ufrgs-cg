@@ -70,16 +70,26 @@ void opengl_reshape(int w, int h)
 
 void opengl_draw_model(Model *m)
 {
-    for (int i = 0; i < m->triangles_count; i++) {
-        // TODO add smooth shading (see referencias/codigo_fonte_cg_ti3/ogl_fps_control.cpp [line 420]
-        glBegin(GL_TRIANGLES);
+    if (options.smooth_shading) {
+        for (int i = 0; i < m->triangles_count; i++) {
+            glBegin(GL_TRIANGLES);
             glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, -m->triangles[i].normal[0].z);
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
             glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, -m->triangles[i].normal[1].z);
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
             glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, -m->triangles[i].normal[2].z);
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
-        glEnd();
+            glEnd();
+        }
+    } else {
+        for (int i = 0; i < m->triangles_count; i++) {
+            glBegin(GL_TRIANGLES);
+            glNormal3f(m->triangles[i].face_normal.x, m->triangles[i].face_normal.y, -m->triangles[i].face_normal.z);
+            glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
+            glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
+            glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
+            glEnd();
+        }
     }
 }
 
@@ -308,6 +318,7 @@ void ui_create()
     glui->add_radiobutton_to_group(primitives, "Solid");
 
     glui->add_checkbox("Lighting", &options.lighting, 0, ui_callback);
+    glui->add_checkbox("Smooth Shading", &options.smooth_shading, 0, ui_callback);
     glui->add_checkbox("CCW", &options.ccw, 0, ui_callback);
     glui->add_checkbox("Backface Culling", &options.backface_culling, 0, ui_callback);
 

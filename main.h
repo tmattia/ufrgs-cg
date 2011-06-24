@@ -67,6 +67,7 @@ struct options {
     int camera_centered;
     float near;
     float far;
+    int smooth_shading;
 } options;
 int ui_win[2];
 void ui_create();
