@@ -215,6 +215,11 @@ void close2gl_raster_triangle(float *v0, float *v1, float *v2)
             close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2], (int) v2[0], (int) v2[1], (int) v2[2]);
             close2gl_raster_line((int) v1[0], (int) v1[1], (int) v1[2], (int) v2[0], (int) v2[1], (int) v2[2]);
             break;
+        case 2:
+            close2gl_raster_solid((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v1[0], (int) v1[1], (int) v1[2],
+                    (int) v2[0], (int) v2[1], (int) v2[2]);
+            break;
     }
 }
 
@@ -250,6 +255,68 @@ void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1)
     for (int i = 0; i < points; i++) {
         close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i);
     }
+}
+
+void close2gl_raster_solid(int x0, int y0, int z0,
+        int x1, int y1, int z1,
+        int x2, int y2, int z2)
+{
+    int *start = new int[close2gl_w];
+    int *end = new int[close2gl_w];
+
+    float *point1 = new float[2];
+    float *point2 = new float[2];
+    float *tmp = new float[2];
+
+    int y_min = min(y0, min(y1, y2));
+    int y_max = max(y0, max(y1, y2));
+
+    if (y_min == y_max || y_max > close2gl_h || y_min < 0) return;
+
+    for (int y = y_min; y < y_max; y++) {
+        start[y] = close2gl_h;
+        end[y] = 0;
+    }
+
+    for (int edge = 0; edge < 3; edge++) {
+        if (edge == 0) {
+            point1[0] = x0; point1[1] = y0;
+            point2[0] = x1; point2[1] = y1;
+        } else if (edge == 1) {
+            point1[0] = x1; point1[1] = y1;
+            point2[0] = x2; point2[1] = y2;
+        } else if (edge == 2) {
+            point1[0] = x2; point1[1] = y2;
+            point2[0] = x0; point2[1] = y0;
+        }
+
+        if (point2[1] < point1[1]) {
+            tmp[0] = point1[0]; tmp[1] = point1[1];
+            point1[0] = point2[0]; point1[1] = point2[1];
+            point2[0] = tmp[0]; point2[1] = tmp[1];
+        }
+
+        float dx = (point2[0] - point1[0]) / (point2[1] - point1[1]);
+        float x = point1[0];
+        for (int y = (int)point1[1]; y < (int)point2[1]; y++) {
+            int xInt = (int)x;
+            if (xInt < start[y]) start[y] = xInt;
+            if (xInt > end[y]) end[y] = xInt;
+            x += dx;
+        }
+    }
+
+    for (int y = y_min; y < y_max; y++) {
+        for (int x = start[y]; x < end[y]; x++) {
+            close2gl_raster_line(x, y, z0, x, y, z1);
+        }
+    }
+
+    delete [] start;
+    delete [] end;
+    delete [] point1;
+    delete [] point2;
+    delete [] tmp;
 }
 
 

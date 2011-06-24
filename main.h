@@ -51,6 +51,7 @@ void close2gl_draw_model(Model *m);
 void close2gl_raster_triangle(float *v0, float *v1, float *v2);
 void close2gl_raster_point(int x, int y, int z);
 void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1);
+void close2gl_raster_solid(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3);
 void close2gl_reset_buffers();
 void close2gl_set_modelview();
 void close2gl_set_projection(float a, float n, float f);
