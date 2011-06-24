@@ -1,3 +1,9 @@
+#ifndef _CAMERA_H_
+#define _CAMERA_H_
+
+#include <model.h>
+#include <vector3f.h>
+
 using namespace std;
 
 class Camera
@@ -112,7 +118,6 @@ class Camera
         vector3f position;
 };
 
-
 Camera::Camera()
 {
     reset();
@@ -199,3 +204,5 @@ void Camera::look_at_model(Model *m)
             m->center->x, m->center->y, m->center->z,
             0, 1, 0);
 }
+
+#endif

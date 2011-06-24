@@ -1,22 +1,61 @@
+#ifndef _MAIN_H_
+#define _MAIN_H_
+
 #include <iostream>
-#include <vector>
+#include <float.h>
+
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
 #include <GLUI/glui.h>
+
 #include <vector3f.h>
 #include <matrix4x4f.h>
 #include <model.h>
 #include <camera.h>
 
-#define WINDOW_SIZE 500
-#define OPENGL_WINDOW   0
-#define CLOSE2GL_WINDOW 1
-
 using namespace std;
 
-/**
- * GUI options
- */
+#define WIN_OPENGL 0
+#define WIN_CLOSE2GL 1
+
+#define UI_RESET_CAMERA 1
+#define UI_READ_FILE 2
+
+#define BG_COLOR_R 0.3f
+#define BG_COLOR_G 0.5f
+#define BG_COLOR_B 0.7f
+#define BG_COLOR_A 1.0f
+
+#define DEFAULT_W 500
+#define DEFAULT_H 500
+
+Model *m;
+Camera *camera;
+
+int opengl_w;
+int opengl_h;
+void opengl_render();
+void opengl_reshape(int w, int h);
+void opengl_draw_model(Model *m);
+
+int close2gl_w;
+int close2gl_h;
+float *close2gl_depth_buffer;
+float *close2gl_color_buffer;
+matrix4x4f *close2gl_modelview;
+matrix4x4f *close2gl_projection;
+matrix4x4f *close2gl_viewport;
+void close2gl_render();
+void close2gl_reshape(int w, int h);
+void close2gl_draw_model(Model *m);
+void close2gl_raster_triangle(float *v0, float *v1, float *v2);
+void close2gl_raster_point(int x, int y, int z);
+void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1);
+void close2gl_reset_buffers();
+void close2gl_set_modelview();
+void close2gl_set_projection(float a, float n, float f);
+void close2gl_set_viewport(float lv, float rv, float bv, float tv);
+
 struct options {
     int lighting;
     int ccw;
@@ -26,193 +65,19 @@ struct options {
     float g;
     float b;
     int camera_centered;
-};
+    float near;
+    float far;
+} options;
+int ui_win[2];
+void ui_create();
+void ui_callback(int action);
+void ui_keyboard(unsigned char key, int x, int y);
+GLUI_EditText *ui_file;
 
-/*
- * Window ids
- */
-int win_id[2];
-
-
-/**
- * Depth buffer
- */
-vector< vector<float> > depth_buffer;
-
-/**
- * Color buffer
- */
-vector< vector< vector<float> > > color_buffer;
-
-/**
- * Keep track of Close2GL's window width/height
- */
-int close2gl_window_width;
-int close2gl_window_height;
-
-/**
- * Close2GL ModelView matrix
- */
-matrix4x4f *modelview;
-
-/**
- * Close2GL Projection matrix
- */
-matrix4x4f *projection;
-
-/**
- * Close2GL Viewport matrix
- */
-matrix4x4f *viewport;
-
-/*
- * Model file text field
- */
-GLUI_EditText *file;
-
-/*
- * Near clipping plane text field
- */
-GLUI_EditText *near;
-
-/*
- * Far clipping plane text field
- */
-GLUI_EditText *far;
-
-/*
- * Viewing Options
- */
-options opt;
-
-/*
- * Model (read from file)
- */
-Model *m;
-
-/*
- * Camera
- */
-Camera *camera;
-
-/**
- * GUI callback for resetting the camera
- */
-void camera_reset(int id);
-
-/**
- * File text field callback handler
- *
- * Creates a new model and stores it in the model global variable
- */
-void read_file(int i);
-
-/**
- * Draws a given model in the OpenGL window
- *
- * @param m The model
- */
-void draw_model(Model *m);
-
-/**
- * Draws a given model in the Close2GL window
- *
- * @param m The model
- */
-void draw_model_close2gl(Model *m);
-
-/**
- * Draw's a given triangle in the Close2GL window
- *
- * @param v0 Triangle's first vertex
- * @param v1 Triangle's second vertex
- * @param v2 Triangle's third vertex
- */
-void draw_triangle(float* v0, float* v1, float* v2);
-
-/**
- * Keyboard function
- *
- * A: slides camera to the left (decreases x in CCS)
- * S: slides camera down (decrease y in CCS)
- * D: slides camera to the right (increase x in CCS)
- * W: slides camera up (increase y in CCS)
- * Q: zoom out (increase z in CCS)
- * E: zoom in (decrease z in CCS)
- * z: rotate cw around y (in CCS)
- * Z: rotate ccw around y (in CCS)
- * x: rotate cw around x (in CCS)
- * X: rotate ccw around x (in CCS)
- * c: rotate cw around z (in CCS)
- * C: rotate ccw around z (in CCS)
- * f: increases camera's vertical FOV
- * F: decreases camera's vertical FOV
- * v: increases camera's horizontal FOV
- * V: decreases camera's horizontal FOV
- */
-void keyboard(unsigned char key, int x, int y);
-
-/**
- * Idle function (used to redraw the scene)
- */
-void idle(int id);
-
-/**
- * Calls all the OpenGL rendering options defined by the GUI
- */
-void set_rendering_options();
-
-/**
- * Sets the ModelView matrix for Close2GL
- */
-void set_modelview_matrix();
-
-/**
- * Sets the Projection matrix for Close2GL
- *
- * @param a Aspect ratio
- * @param n Near clipping plane
- * @param f Far clipping plane
- */
-void set_projection_matrix(float a, float n, float f);
-
-/**
- * Sets the Viewport matrix for Close2GL
- *
- * @param lv Left
- * @param rv Right
- * @param bv Bottom
- * @param tv Top
- */
-void set_viewport_matrix(float lv, float rv, float bv, float tv);
-
-/**
- * OpenGL render function
- */
-void renderOpenGL();
-
-/**
- * OpenGL reshape function
- */
-void reshapeOpenGL(int w, int h);
-
-/**
- * Close2GL render function
- */
-void renderClose2GL();
-
-/**
- * Close2GL reshape function
- */
-void reshapeClose2GL(int w, int h);
-
-/**
- * Clears the depth and color buffers
- *
- * @param w Window width
- * @param h Window height
- */
-void clear_buffers(int w, int h);
-
+GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
+GLfloat light_diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
+GLfloat light_position[] = { 10000, 10000, 10000, 0 };
 
 int main(int argc, char *argv[]);
+
+#endif

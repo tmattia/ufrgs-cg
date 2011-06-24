@@ -1,3 +1,8 @@
+#ifndef _MODEL_H_
+#define _MODEL_H_
+
+#include <vector3f.h>
+
 #define MAX_TRIANGLES 100000
 
 using namespace std;
@@ -67,7 +72,6 @@ class Model
         void find_center();
 
 };
-
 
 Model::Model(const char *path)
 {
@@ -165,3 +169,5 @@ void Model::read_file(const char *path)
 
     fclose(fp);
 }
+
+#endif
