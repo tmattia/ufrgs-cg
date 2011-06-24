@@ -60,9 +60,7 @@ void draw_model_close2gl(Model *m)
         // backface culling
         bool cull = false;
         if (opt.backface_culling) {
-            vector3f b0(v0[0] - v1[0], v0[1] - v1[1], v0[2] - v1[2]);
-            vector3f b1(v0[0] - v2[0], v0[1] - v2[1], v0[2] - v2[2]);
-            cull = dotProduct(camera->position - camera->n, crossProduct(b0, b1)) > 0;
+            cull = dotProduct(camera->n, m->triangles[i].face_normal) >= 0;
             if (opt.ccw) cull = !cull;
         }
 
