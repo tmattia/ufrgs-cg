@@ -440,8 +440,6 @@ int main(int argc, char *argv[]) {
 
     camera = new Camera();
 
-    close2gl_reset_buffers();
-
     glutMainLoop();
     return 0;
 }
