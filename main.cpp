@@ -216,11 +216,11 @@ void close2gl_raster_point(int x, int y, int z)
     if (y >= close2gl_h) x = close2gl_h - 1;
     int pos = 4 * (x + y * close2gl_w);
     if (z < close2gl_depth_buffer[pos / 4]) {
-        close2gl_depth_buffer[pos] = z;
+        close2gl_depth_buffer[pos / 4] = z;
         close2gl_color_buffer[pos] = options.r;
-        close2gl_color_buffer[pos] = options.g;
-        close2gl_color_buffer[pos] = options.b;
-        close2gl_color_buffer[pos] = 1;
+        close2gl_color_buffer[pos + 1] = options.g;
+        close2gl_color_buffer[pos + 2] = options.b;
+        close2gl_color_buffer[pos + 3] = 1;
     }
 }
 
