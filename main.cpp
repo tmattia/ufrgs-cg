@@ -124,6 +124,13 @@ void close2gl_draw_model(Model *m)
     float *v1 = new float[4];
     float *v2 = new float[4];
     for (int i = 0; i < m->triangles_count; i++) {
+        // backface culling
+        if (options.backface_culling) {
+            bool cull = dotProduct(camera->n, m->triangles[i].face_normal) >= 0;
+            if (options.ccw) cull = !cull;
+            if (cull) continue;
+        }
+
         // transform points to homogeneous coordinates
         v0[0] = m->triangles[i].v0.x;
         v0[1] = m->triangles[i].v0.y;
@@ -140,7 +147,6 @@ void close2gl_draw_model(Model *m)
         v2[2] = m->triangles[i].v2.z;
         v2[3] = 1;
 
-
         // modelview transformation
         v0 = *close2gl_modelview * v0;
         v1 = *close2gl_modelview * v1;
@@ -151,42 +157,35 @@ void close2gl_draw_model(Model *m)
         v1 = *close2gl_projection * v1;
         v2 = *close2gl_projection * v2;
 
-        // backface culling
-        bool cull = false;
-        if (options.backface_culling) {
-            cull = dotProduct(camera->n, m->triangles[i].face_normal) >= 0;
-            if (options.ccw) cull = !cull;
-        }
-
         // clipping
-        if (!cull &&
-                abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
+        bool clip = abs(v0[0]) <= abs(v0[3]) && abs(v0[1]) <= abs(v0[3]) && abs(v0[2]) <= abs(v0[3]) &&
                 abs(v1[0]) <= abs(v1[3]) && abs(v1[1]) <= abs(v1[3]) && abs(v1[2]) <= abs(v1[3]) &&
-                abs(v2[0]) <= abs(v2[3]) && abs(v2[1]) <= abs(v2[3]) && abs(v2[2]) <= abs(v2[3])) {
-            // perspective division
-            v0[0] = v0[0] / v0[3];
-            v0[1] = v0[1] / v0[3];
-            v0[2] = v0[2] / v0[3];
-            v0[3] = v0[3] / v0[3];
+                abs(v2[0]) <= abs(v2[3]) && abs(v2[1]) <= abs(v2[3]) && abs(v2[2]) <= abs(v2[3]);
+        if (!clip) continue;
 
-            v1[0] = v1[0] / v1[3];
-            v1[1] = v1[1] / v1[3];
-            v1[2] = v1[2] / v1[3];
-            v1[3] = v1[3] / v1[3];
+        // perspective division
+        v0[0] = v0[0] / v0[3];
+        v0[1] = v0[1] / v0[3];
+        v0[2] = v0[2] / v0[3];
+        v0[3] = v0[3] / v0[3];
 
-            v2[0] = v2[0] / v2[3];
-            v2[1] = v2[1] / v2[3];
-            v2[2] = v2[2] / v2[3];
-            v2[3] = v2[3] / v2[3];
+        v1[0] = v1[0] / v1[3];
+        v1[1] = v1[1] / v1[3];
+        v1[2] = v1[2] / v1[3];
+        v1[3] = v1[3] / v1[3];
 
-            // viewport transformation
-            v0 = *close2gl_viewport * v0;
-            v1 = *close2gl_viewport * v1;
-            v2 = *close2gl_viewport * v2;
+        v2[0] = v2[0] / v2[3];
+        v2[1] = v2[1] / v2[3];
+        v2[2] = v2[2] / v2[3];
+        v2[3] = v2[3] / v2[3];
 
-            // drawing
-            close2gl_raster_triangle(v0, v1, v2);
-        }
+        // viewport transformation
+        v0 = *close2gl_viewport * v0;
+        v1 = *close2gl_viewport * v1;
+        v2 = *close2gl_viewport * v2;
+
+        // drawing
+        close2gl_raster_triangle(v0, v1, v2);
     }
 
     glRasterPos2i(0, 0);
