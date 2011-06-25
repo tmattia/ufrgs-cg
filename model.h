@@ -141,8 +141,8 @@ void Model::read_file(const char *path)
                 &(triangles[i].face_normal.z));
 
         triangles[i].color[0] = (unsigned char) (int) (255 * (diffuse[color_index[0]].x));
-        triangles[i].color[1] = (unsigned char) (int) (255 * (diffuse[color_index[0]].y));
-        triangles[i].color[2] = (unsigned char) (int) (255 * (diffuse[color_index[0]].z));
+        triangles[i].color[1] = (unsigned char) (int) (255 * (diffuse[color_index[1]].y));
+        triangles[i].color[2] = (unsigned char) (int) (255 * (diffuse[color_index[2]].z));
 
         // define bounding box
         if (triangles[i].v0.x > bbox.x_max) bbox.x_max = triangles[i].v0.x;

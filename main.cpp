@@ -133,6 +133,7 @@ void close2gl_draw_model(Model *m)
     float *v0 = new float[4];
     float *v1 = new float[4];
     float *v2 = new float[4];
+    float *color = new float[4];
     for (int i = 0; i < m->triangles_count; i++) {
         // backface culling
         if (options.backface_culling) {
@@ -195,35 +196,47 @@ void close2gl_draw_model(Model *m)
         v2 = *close2gl_viewport * v2;
 
         // drawing
-        close2gl_raster_triangle(v0, v1, v2);
+        color[0] = options.r;
+        color[1] = options.g;
+        color[2] = options.b;
+        color[3] = 1.0;
+        close2gl_raster_triangle(v0, v1, v2, color);
     }
 
     glRasterPos2i(0, 0);
     glDrawPixels(close2gl_w, close2gl_h, GL_RGBA, GL_FLOAT, close2gl_color_buffer);
+
+    delete [] v0;
+    delete [] v1;
+    delete [] v2;
+    delete [] color;
 }
 
-void close2gl_raster_triangle(float *v0, float *v1, float *v2)
+void close2gl_raster_triangle(float *v0, float *v1, float *v2, float *color)
 {
     switch (options.primitives) {
         case 0:
-            close2gl_raster_point((int) v0[0], (int) v0[1], (int) v0[2]);
-            close2gl_raster_point((int) v1[0], (int) v1[1], (int) v1[2]);
-            close2gl_raster_point((int) v2[0], (int) v2[1], (int) v2[2]);
+            close2gl_raster_point((int) v0[0], (int) v0[1], (int) v0[2], color);
+            close2gl_raster_point((int) v1[0], (int) v1[1], (int) v1[2], color);
+            close2gl_raster_point((int) v2[0], (int) v2[1], (int) v2[2], color);
             break;
         case 1:
-            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2], (int) v1[0], (int) v1[1], (int) v1[2]);
-            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2], (int) v2[0], (int) v2[1], (int) v2[2]);
-            close2gl_raster_line((int) v1[0], (int) v1[1], (int) v1[2], (int) v2[0], (int) v2[1], (int) v2[2]);
+            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v1[0], (int) v1[1], (int) v1[2], color);
+            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v2[0], (int) v2[1], (int) v2[2], color);
+            close2gl_raster_line((int) v1[0], (int) v1[1], (int) v1[2],
+                    (int) v2[0], (int) v2[1], (int) v2[2], color);
             break;
         case 2:
             close2gl_raster_solid((int) v0[0], (int) v0[1], (int) v0[2],
                     (int) v1[0], (int) v1[1], (int) v1[2],
-                    (int) v2[0], (int) v2[1], (int) v2[2]);
+                    (int) v2[0], (int) v2[1], (int) v2[2], color);
             break;
     }
 }
 
-void close2gl_raster_point(int x, int y, int z)
+void close2gl_raster_point(int x, int y, int z, float *color)
 {
     if (x < 0) x = 0;
     if (y < 0) y = 0;
@@ -232,14 +245,16 @@ void close2gl_raster_point(int x, int y, int z)
     int pos = 4 * (x + y * close2gl_w);
     if (z < close2gl_depth_buffer[pos / 4]) {
         close2gl_depth_buffer[pos / 4] = z;
-        close2gl_color_buffer[pos] = options.r;
-        close2gl_color_buffer[pos + 1] = options.g;
-        close2gl_color_buffer[pos + 2] = options.b;
-        close2gl_color_buffer[pos + 3] = 1;
+        close2gl_color_buffer[pos] = color[0];
+        close2gl_color_buffer[pos + 1] = color[1];
+        close2gl_color_buffer[pos + 2] = color[2];
+        close2gl_color_buffer[pos + 3] = color[3];
     }
 }
 
-void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1)
+void close2gl_raster_line(int x0, int y0, int z0,
+        int x1, int y1, int z1,
+        float *color)
 {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -251,15 +266,16 @@ void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1)
     float inc_y = dy / (float) points;
     float inc_z = dz / (float) points;
 
-    close2gl_raster_point(x0, y0, z0);
+    close2gl_raster_point(x0, y0, z0, color);
     for (int i = 0; i < points; i++) {
-        close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i);
+        close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i, color);
     }
 }
 
 void close2gl_raster_solid(int x0, int y0, int z0,
         int x1, int y1, int z1,
-        int x2, int y2, int z2)
+        int x2, int y2, int z2,
+        float *color)
 {
     int *start = new int[close2gl_w];
     int *end = new int[close2gl_w];
@@ -309,7 +325,7 @@ void close2gl_raster_solid(int x0, int y0, int z0,
     int avg_z = (int) (z0 + z1 + z2) / 3.0;
     for (int y = y_min; y < y_max; y++) {
         for (int x = start[y]; x < end[y]; x++) {
-            close2gl_raster_line(x, y, avg_z, x, y, avg_z);
+            close2gl_raster_line(x, y, avg_z, x, y, avg_z, color);
         }
     }
 
@@ -412,7 +428,7 @@ void ui_create()
     glui->add_separator();
     glui->add_statictext("Model File");
     ui_file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, UI_READ_FILE, ui_callback);
-    ui_file->set_text("/Users/tomasmattia/Dropbox/ufrgs/cg/trabalhos/3/vaca.in");
+    ui_file->set_text("models/vaca.in");
 }
 
 void ui_callback(int action)
