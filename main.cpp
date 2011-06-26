@@ -137,7 +137,10 @@ void close2gl_draw_model(Model *m)
     for (int i = 0; i < m->triangles_count; i++) {
         // backface culling
         if (options.backface_culling) {
-            bool cull = dotProduct(camera->n, m->triangles[i].face_normal) >= 0;
+            vector3f a = m->triangles[i].v0 - m->triangles[i].v1;
+            vector3f b = m->triangles[i].v0 - m->triangles[i].v2;
+            vector3f normal = crossProduct(a, b);
+            bool cull = dotProduct(camera->n, normal) >= 0;
             if (options.ccw) cull = !cull;
             if (cull) continue;
         }
