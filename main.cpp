@@ -128,6 +128,15 @@ void close2gl_reshape(int w, int h)
     close2gl_set_viewport(0, close2gl_w, 0, close2gl_h);
 }
 
+float* close2gl_triangle_color(triangle t) {
+    float *color = new float[4];
+    color[0] = options.r;
+    color[1] = options.g;
+    color[2] = options.b;
+    color[3] = 1.0;
+    return color;
+}
+
 void close2gl_draw_model(Model *m)
 {
     float *v0 = new float[4];
@@ -135,6 +144,8 @@ void close2gl_draw_model(Model *m)
     float *v2 = new float[4];
     float *color = new float[4];
     for (int i = 0; i < m->triangles_count; i++) {
+        color = close2gl_triangle_color(m->triangles[i]);
+
         // backface culling
         if (options.backface_culling) {
             vector3f a = m->triangles[i].v0 - m->triangles[i].v1;
@@ -199,10 +210,6 @@ void close2gl_draw_model(Model *m)
         v2 = *close2gl_viewport * v2;
 
         // drawing
-        color[0] = options.r;
-        color[1] = options.g;
-        color[2] = options.b;
-        color[3] = 1.0;
         close2gl_raster_triangle(v0, v1, v2, color);
     }
 
