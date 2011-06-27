@@ -48,6 +48,7 @@ matrix4x4f *close2gl_viewport;
 void close2gl_render();
 void close2gl_reshape(int w, int h);
 void close2gl_draw_model(Model *m);
+float* close2gl_triangle_color(float* v0, float* v1, float* v2);
 void close2gl_raster_triangle(float *v0, float *v1, float *v2, float *color);
 void close2gl_raster_point(int x, int y, int z, float *color);
 void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1, float *color);

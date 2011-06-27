@@ -128,15 +128,6 @@ void close2gl_reshape(int w, int h)
     close2gl_set_viewport(0, close2gl_w, 0, close2gl_h);
 }
 
-float* close2gl_triangle_color(triangle t) {
-    float *color = new float[4];
-    color[0] = options.r;
-    color[1] = options.g;
-    color[2] = options.b;
-    color[3] = 1.0;
-    return color;
-}
-
 void close2gl_draw_model(Model *m)
 {
     float *v0 = new float[4];
@@ -144,8 +135,6 @@ void close2gl_draw_model(Model *m)
     float *v2 = new float[4];
     float *color = new float[4];
     for (int i = 0; i < m->triangles_count; i++) {
-        color = close2gl_triangle_color(m->triangles[i]);
-
         // backface culling
         if (options.backface_culling) {
             vector3f a = m->triangles[i].v0 - m->triangles[i].v1;
@@ -176,6 +165,8 @@ void close2gl_draw_model(Model *m)
         v0 = *close2gl_modelview * v0;
         v1 = *close2gl_modelview * v1;
         v2 = *close2gl_modelview * v2;
+
+        color = close2gl_triangle_color(v0, v1, v2);
 
         // projection transformation
         v0 = *close2gl_projection * v0;
@@ -220,6 +211,38 @@ void close2gl_draw_model(Model *m)
     delete [] v1;
     delete [] v2;
     delete [] color;
+}
+
+float* close2gl_triangle_color(float *v0, float *v1, float *v2)
+{
+    float *color = new float[4];
+
+    if (options.lighting) {
+        vector3f vv0(v0[0], v0[1], v0[2]);
+        vector3f vv1(v1[0], v1[1], v1[2]);
+        vector3f vv2(v2[0], v2[1], v2[2]);
+
+        vector3f s(light_position[0], light_position[1], light_position[2]);
+        s = vv0 - s;
+        s.normalize();
+
+        vector3f n = crossProduct(vv0 - vv1, vv0 - vv2);
+        n.normalize();
+
+        float intensity = dotProduct(n, s);
+        // TODO add specular component
+        color[0] = (options.r * light_ambient[0]) + (options.r * light_diffuse[0] * intensity);
+        color[1] = (options.g * light_ambient[1]) + (options.g * light_diffuse[1] * intensity);
+        color[2] = (options.b * light_ambient[2]) + (options.b * light_diffuse[2] * intensity);
+        color[3] = 1.0;
+    } else {
+        color[0] = options.r;
+        color[1] = options.g;
+        color[2] = options.b;
+        color[3] = 1.0;
+    }
+
+    return color;
 }
 
 void close2gl_raster_triangle(float *v0, float *v1, float *v2, float *color)
