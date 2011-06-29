@@ -383,23 +383,24 @@ void ui_callback(int action)
 
 void ui_keyboard(unsigned char key, int x, int y)
 {
+    float slide = m->bbox.x_max * 0.05;
     if (options.camera_centered) {
         switch (key) {
-            case 'a': camera->slide_around_model(m, -50, 0, 0); break;
-            case 's': camera->slide_around_model(m, 0, -50, 0); break;
-            case 'd': camera->slide_around_model(m, 50, 0, 0); break;
-            case 'w': camera->slide_around_model(m, 0, 50, 0); break;
-            case 'q': camera->slide_around_model(m, 0, 0, -50); break;
-            case 'e': camera->slide_around_model(m, 0, 0, 50); break;
+            case 'a': camera->slide_around_model(m, -slide, 0, 0); break;
+            case 's': camera->slide_around_model(m, 0, -slide, 0); break;
+            case 'd': camera->slide_around_model(m, slide, 0, 0); break;
+            case 'w': camera->slide_around_model(m, 0, slide, 0); break;
+            case 'q': camera->slide_around_model(m, 0, 0, -slide); break;
+            case 'e': camera->slide_around_model(m, 0, 0, slide); break;
         }
     } else {
         switch (key) {
-            case 'a': camera->slide(-50, 0, 0); break;
-            case 's': camera->slide(0, -50, 0); break;
-            case 'd': camera->slide(50, 0, 0); break;
-            case 'w': camera->slide(0, 50, 0); break;
-            case 'q': camera->slide(0, 0, -50); break;
-            case 'e': camera->slide(0, 0, 50); break;
+            case 'a': camera->slide(-slide, 0, 0); break;
+            case 's': camera->slide(0, -slide, 0); break;
+            case 'd': camera->slide(slide, 0, 0); break;
+            case 'w': camera->slide(0, slide, 0); break;
+            case 'q': camera->slide(0, 0, -slide); break;
+            case 'e': camera->slide(0, 0, slide); break;
         }
     }
     switch (key) {
