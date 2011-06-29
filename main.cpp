@@ -14,13 +14,13 @@ void opengl_render()
         glEnable(GL_LIGHT0);
         glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-        float color[] = {options.r, options.g, options.b};
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+        glEnable(GL_COLOR_MATERIAL);
     } else {
         glDisable(GL_LIGHTING);
-        glColor3f(options.r, options.g, options.b);
+        glDisable(GL_LIGHT0);
+        glDisable(GL_COLOR_MATERIAL);
     }
 
     if (options.ccw) {
@@ -45,13 +45,13 @@ void opengl_render()
         case 2:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
-        default: break;
     }
 
     if (m != NULL) {
         gluLookAt(camera->position.x, camera->position.y, camera->position.z,
                 camera->position.x - camera->n.x, camera->position.y - camera->n.y, camera->position.z - camera->n.z,
                 camera->v.x, camera->v.y, camera->v.z);
+        glColor3f(options.r, options.g, options.b);
         opengl_draw_model(m);
     }
 
@@ -70,27 +70,25 @@ void opengl_reshape(int w, int h)
 
 void opengl_draw_model(Model *m)
 {
+    glBegin(GL_TRIANGLES);
     if (options.smooth_shading) {
         for (int i = 0; i < m->triangles_count; i++) {
-            glBegin(GL_TRIANGLES);
             glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, -m->triangles[i].normal[0].z);
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
             glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, -m->triangles[i].normal[1].z);
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
             glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, -m->triangles[i].normal[2].z);
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
-            glEnd();
         }
     } else {
         for (int i = 0; i < m->triangles_count; i++) {
-            glBegin(GL_TRIANGLES);
             glNormal3f(m->triangles[i].face_normal.x, m->triangles[i].face_normal.y, -m->triangles[i].face_normal.z);
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
-            glEnd();
         }
     }
+    glEnd();
 }
 
 
@@ -133,7 +131,6 @@ void close2gl_draw_model(Model *m)
     float *v0 = new float[4];
     float *v1 = new float[4];
     float *v2 = new float[4];
-    float *color = new float[4];
     for (int i = 0; i < m->triangles_count; i++) {
         // backface culling
         if (options.backface_culling) {
@@ -165,8 +162,6 @@ void close2gl_draw_model(Model *m)
         v0 = *close2gl_modelview * v0;
         v1 = *close2gl_modelview * v1;
         v2 = *close2gl_modelview * v2;
-
-        color = close2gl_triangle_color(v0, v1, v2);
 
         // projection transformation
         v0 = *close2gl_projection * v0;
@@ -201,7 +196,7 @@ void close2gl_draw_model(Model *m)
         v2 = *close2gl_viewport * v2;
 
         // drawing
-        close2gl_raster_triangle(v0, v1, v2, color);
+        close2gl_raster(v0, v1, v2);
     }
 
     glRasterPos2i(0, 0);
@@ -210,66 +205,28 @@ void close2gl_draw_model(Model *m)
     delete [] v0;
     delete [] v1;
     delete [] v2;
-    delete [] color;
 }
 
-float* close2gl_triangle_color(float *v0, float *v1, float *v2)
-{
-    float *color = new float[4];
-
-    if (options.lighting) {
-        vector3f vv0(v0[0], v0[1], v0[2]);
-        vector3f vv1(v1[0], v1[1], v1[2]);
-        vector3f vv2(v2[0], v2[1], v2[2]);
-
-        vector3f s(light_position[0], light_position[1], light_position[2]);
-        s = vv0 - s;
-        s.normalize();
-
-        vector3f n = crossProduct(vv0 - vv1, vv0 - vv2);
-        n.normalize();
-
-        float intensity = dotProduct(n, s);
-        // TODO add specular component
-        color[0] = (options.r * light_ambient[0]) + (options.r * light_diffuse[0] * intensity);
-        color[1] = (options.g * light_ambient[1]) + (options.g * light_diffuse[1] * intensity);
-        color[2] = (options.b * light_ambient[2]) + (options.b * light_diffuse[2] * intensity);
-        color[3] = 1.0;
-    } else {
-        color[0] = options.r;
-        color[1] = options.g;
-        color[2] = options.b;
-        color[3] = 1.0;
-    }
-
-    return color;
-}
-
-void close2gl_raster_triangle(float *v0, float *v1, float *v2, float *color)
+void close2gl_raster(float *v0, float *v1, float *v2)
 {
     switch (options.primitives) {
         case 0:
-            close2gl_raster_point((int) v0[0], (int) v0[1], (int) v0[2], color);
-            close2gl_raster_point((int) v1[0], (int) v1[1], (int) v1[2], color);
-            close2gl_raster_point((int) v2[0], (int) v2[1], (int) v2[2], color);
+            close2gl_raster_point((int) v0[0], (int) v0[1], (int) v0[2]);
+            close2gl_raster_point((int) v1[0], (int) v1[1], (int) v1[2]);
+            close2gl_raster_point((int) v2[0], (int) v2[1], (int) v2[2]);
             break;
         case 1:
             close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
-                    (int) v1[0], (int) v1[1], (int) v1[2], color);
+                    (int) v1[0], (int) v1[1], (int) v1[2]);
             close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
-                    (int) v2[0], (int) v2[1], (int) v2[2], color);
+                    (int) v2[0], (int) v2[1], (int) v2[2]);
             close2gl_raster_line((int) v1[0], (int) v1[1], (int) v1[2],
-                    (int) v2[0], (int) v2[1], (int) v2[2], color);
-            break;
-        case 2:
-            close2gl_raster_solid((int) v0[0], (int) v0[1], (int) v0[2],
-                    (int) v1[0], (int) v1[1], (int) v1[2],
-                    (int) v2[0], (int) v2[1], (int) v2[2], color);
+                    (int) v2[0], (int) v2[1], (int) v2[2]);
             break;
     }
 }
 
-void close2gl_raster_point(int x, int y, int z, float *color)
+void close2gl_raster_point(int x, int y, int z)
 {
     if (x < 0) x = 0;
     if (y < 0) y = 0;
@@ -278,16 +235,15 @@ void close2gl_raster_point(int x, int y, int z, float *color)
     int pos = 4 * (x + y * close2gl_w);
     if (z < close2gl_depth_buffer[pos / 4]) {
         close2gl_depth_buffer[pos / 4] = z;
-        close2gl_color_buffer[pos] = color[0];
-        close2gl_color_buffer[pos + 1] = color[1];
-        close2gl_color_buffer[pos + 2] = color[2];
-        close2gl_color_buffer[pos + 3] = color[3];
+        close2gl_color_buffer[pos] = options.r;
+        close2gl_color_buffer[pos + 1] = options.g;
+        close2gl_color_buffer[pos + 2] = options.b;
+        close2gl_color_buffer[pos + 3] = 1.0;
     }
 }
 
 void close2gl_raster_line(int x0, int y0, int z0,
-        int x1, int y1, int z1,
-        float *color)
+        int x1, int y1, int z1)
 {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -299,76 +255,11 @@ void close2gl_raster_line(int x0, int y0, int z0,
     float inc_y = dy / (float) points;
     float inc_z = dz / (float) points;
 
-    close2gl_raster_point(x0, y0, z0, color);
+    close2gl_raster_point(x0, y0, z0);
     for (int i = 0; i < points; i++) {
-        close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i, color);
+        close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i);
     }
 }
-
-void close2gl_raster_solid(int x0, int y0, int z0,
-        int x1, int y1, int z1,
-        int x2, int y2, int z2,
-        float *color)
-{
-    int *start = new int[close2gl_w];
-    int *end = new int[close2gl_w];
-
-    float *point1 = new float[2];
-    float *point2 = new float[2];
-    float *tmp = new float[2];
-
-    int y_min = min(y0, min(y1, y2));
-    int y_max = max(y0, max(y1, y2));
-
-    if (y_min == y_max || y_max > close2gl_h || y_min < 0) return;
-
-    for (int y = y_min; y < y_max; y++) {
-        start[y] = close2gl_h;
-        end[y] = 0;
-    }
-
-    for (int edge = 0; edge < 3; edge++) {
-        if (edge == 0) {
-            point1[0] = x0; point1[1] = y0;
-            point2[0] = x1; point2[1] = y1;
-        } else if (edge == 1) {
-            point1[0] = x1; point1[1] = y1;
-            point2[0] = x2; point2[1] = y2;
-        } else if (edge == 2) {
-            point1[0] = x2; point1[1] = y2;
-            point2[0] = x0; point2[1] = y0;
-        }
-
-        if (point2[1] < point1[1]) {
-            tmp[0] = point1[0]; tmp[1] = point1[1];
-            point1[0] = point2[0]; point1[1] = point2[1];
-            point2[0] = tmp[0]; point2[1] = tmp[1];
-        }
-
-        float dx = (point2[0] - point1[0]) / (point2[1] - point1[1]);
-        float x = point1[0];
-        for (int y = (int)point1[1]; y < (int)point2[1]; y++) {
-            int xInt = (int)x;
-            if (xInt < start[y]) start[y] = xInt;
-            if (xInt > end[y]) end[y] = xInt;
-            x += dx;
-        }
-    }
-
-    int avg_z = (int) (z0 + z1 + z2) / 3.0;
-    for (int y = y_min; y < y_max; y++) {
-        for (int x = start[y]; x < end[y]; x++) {
-            close2gl_raster_line(x, y, avg_z, x, y, avg_z, color);
-        }
-    }
-
-    delete [] start;
-    delete [] end;
-    delete [] point1;
-    delete [] point2;
-    delete [] tmp;
-}
-
 
 void close2gl_reset_buffers()
 {

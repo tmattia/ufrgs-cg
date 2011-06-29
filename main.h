@@ -20,6 +20,7 @@ using namespace std;
 
 #define UI_RESET_CAMERA 1
 #define UI_READ_FILE 2
+#define UI_SET_LIGHTING 3
 
 #define BG_COLOR_R 0.0f
 #define BG_COLOR_G 0.0f
@@ -48,11 +49,11 @@ matrix4x4f *close2gl_viewport;
 void close2gl_render();
 void close2gl_reshape(int w, int h);
 void close2gl_draw_model(Model *m);
-float* close2gl_triangle_color(float* v0, float* v1, float* v2);
-void close2gl_raster_triangle(float *v0, float *v1, float *v2, float *color);
-void close2gl_raster_point(int x, int y, int z, float *color);
-void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1, float *color);
-void close2gl_raster_solid(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, float *color);
+
+void close2gl_raster(float *v0, float *v1, float *v2);
+void close2gl_raster_point(int x, int y, int z);
+void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1);
+
 void close2gl_reset_buffers();
 void close2gl_set_modelview();
 void close2gl_set_projection(float a, float n, float f);
@@ -78,8 +79,9 @@ void ui_keyboard(unsigned char key, int x, int y);
 GLUI_EditText *ui_file;
 
 GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-GLfloat light_diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
-GLfloat light_position[] = { 10000, 10000, 10000, 0 };
+GLfloat light_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
+GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
+GLfloat light_position[] = { 1000, 1000, 1000, 1.0 };
 
 int main(int argc, char *argv[]);
 
