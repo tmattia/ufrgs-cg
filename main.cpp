@@ -137,8 +137,8 @@ void close2gl_draw_model(Model *m)
             vector3f a = m->triangles[i].v0 - m->triangles[i].v1;
             vector3f b = m->triangles[i].v0 - m->triangles[i].v2;
             vector3f normal = crossProduct(a, b);
-            bool cull = dotProduct(camera->n, normal) >= 0;
-            if (options.ccw) cull = !cull;
+            bool cull = dotProduct(-camera->n, normal) >= 0;
+            if (!options.ccw) cull = !cull;
             if (cull) continue;
         }
 
