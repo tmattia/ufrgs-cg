@@ -352,7 +352,7 @@ void ui_create()
     glui->add_separator();
     glui->add_statictext("Model File");
     ui_file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, UI_READ_FILE, ui_callback);
-    ui_file->set_text("models/vaca.in");
+    ui_file->set_text("models/cubo_tex.in");
 }
 
 void ui_callback(int action)

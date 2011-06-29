@@ -17,6 +17,7 @@ struct triangle {
     vector3f normal[3];
     vector3f face_normal;
     char color[3];
+    float text_coord[3][2];
 };
 
 /**
@@ -56,6 +57,8 @@ class Model
          * All the triangles which compose the object
          */
         triangle triangles[MAX_TRIANGLES];
+
+        bool hasTexture;
 
     private:
         /**
@@ -118,27 +121,53 @@ void Model::read_file(const char *path)
         fscanf(fp, "material shine %f\n", &(shine[i]));
     }
 
+    fscanf(fp, "Texture = %c", &ch);
+    hasTexture = (ch == 'Y');
+    while (ch != '\n') fscanf(fp, "%c", &ch);
+
     fscanf(fp, "%c", &ch);
     while (ch != '\n') fscanf(fp, "%c", &ch); // skip documentation line
 
     int color_index[3];
     for (int i = 0; i < triangles_count; i++) {
-        fscanf(fp, "v0 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v0.x), &(triangles[i].v0.y), &(triangles[i].v0.z),
-                &(triangles[i].normal[0].x), &(triangles[i].normal[0].y), &(triangles[i].normal[0].z),
-                &(color_index[0]));
-        fscanf(fp, "v1 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v1.x), &(triangles[i].v1.y), &(triangles[i].v1.z),
-                &(triangles[i].normal[1].x), &(triangles[i].normal[1].y), &(triangles[i].normal[1].z),
-                &(color_index[1]));
-        fscanf(fp, "v2 %f %f %f %f %f %f %d\n",
-                &(triangles[i].v2.x), &(triangles[i].v2.y), &(triangles[i].v2.z),
-                &(triangles[i].normal[2].x), &(triangles[i].normal[2].y), &(triangles[i].normal[2].z),
-                &(color_index[2]));
-        fscanf(fp, "face normal %f %f %f\n",
-                &(triangles[i].face_normal.x),
-                &(triangles[i].face_normal.y),
-                &(triangles[i].face_normal.z));
+        if (hasTexture) {
+            fscanf(fp, "v0 %f %f %f %f %f %f %d %f %f\n",
+                    &(triangles[i].v0.x), &(triangles[i].v0.y), &(triangles[i].v0.z),
+                    &(triangles[i].normal[0].x), &(triangles[i].normal[0].y), &(triangles[i].normal[0].z),
+                    &(color_index[0]),
+                    &(triangles[i].text_coord[0][0]), &(triangles[i].text_coord[0][1]));
+            fscanf(fp, "v1 %f %f %f %f %f %f %d %f %f\n",
+                    &(triangles[i].v1.x), &(triangles[i].v1.y), &(triangles[i].v1.z),
+                    &(triangles[i].normal[1].x), &(triangles[i].normal[1].y), &(triangles[i].normal[1].z),
+                    &(color_index[1]),
+                    &(triangles[i].text_coord[1][0]), &(triangles[i].text_coord[1][1]));
+            fscanf(fp, "v2 %f %f %f %f %f %f %d %f %f\n",
+                    &(triangles[i].v2.x), &(triangles[i].v2.y), &(triangles[i].v2.z),
+                    &(triangles[i].normal[2].x), &(triangles[i].normal[2].y), &(triangles[i].normal[2].z),
+                    &(color_index[2]),
+                    &(triangles[i].text_coord[2][0]), &(triangles[i].text_coord[2][1]));
+            fscanf(fp, "face normal %f %f %f\n",
+                    &(triangles[i].face_normal.x),
+                    &(triangles[i].face_normal.y),
+                    &(triangles[i].face_normal.z));
+        } else {
+            fscanf(fp, "v0 %f %f %f %f %f %f %d\n",
+                    &(triangles[i].v0.x), &(triangles[i].v0.y), &(triangles[i].v0.z),
+                    &(triangles[i].normal[0].x), &(triangles[i].normal[0].y), &(triangles[i].normal[0].z),
+                    &(color_index[0]));
+            fscanf(fp, "v1 %f %f %f %f %f %f %d\n",
+                    &(triangles[i].v1.x), &(triangles[i].v1.y), &(triangles[i].v1.z),
+                    &(triangles[i].normal[1].x), &(triangles[i].normal[1].y), &(triangles[i].normal[1].z),
+                    &(color_index[1]));
+            fscanf(fp, "v2 %f %f %f %f %f %f %d\n",
+                    &(triangles[i].v2.x), &(triangles[i].v2.y), &(triangles[i].v2.z),
+                    &(triangles[i].normal[2].x), &(triangles[i].normal[2].y), &(triangles[i].normal[2].z),
+                    &(color_index[2]));
+            fscanf(fp, "face normal %f %f %f\n",
+                    &(triangles[i].face_normal.x),
+                    &(triangles[i].face_normal.y),
+                    &(triangles[i].face_normal.z));
+        }
 
         triangles[i].color[0] = (unsigned char) (int) (255 * (diffuse[color_index[0]].x));
         triangles[i].color[1] = (unsigned char) (int) (255 * (diffuse[color_index[1]].y));
