@@ -330,6 +330,12 @@ void close2gl_raster(float *v0, float *v1, float *v2, vector3f *color)
                     (int) v2[0], (int) v2[1], (int) v2[2], color);
             break;
         case 2:
+            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v1[0], (int) v1[1], (int) v1[2], color);
+            close2gl_raster_line((int) v2[0], (int) v2[1], (int) v2[2],
+                    (int) v1[0], (int) v1[1], (int) v1[2], color);
+            close2gl_raster_line((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v2[0], (int) v2[1], (int) v2[2], color);
             close2gl_raster_triangle((int) v0[0], (int) v0[1], (int) v0[2],
                     (int) v1[0], (int) v1[1], (int) v1[2],
                     (int) v2[0], (int) v2[1], (int) v2[2], color);
