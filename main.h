@@ -12,6 +12,7 @@
 #include <matrix4x4f.h>
 #include <model.h>
 #include <camera.h>
+#include <texture_manager.h>
 
 using namespace std;
 
@@ -29,6 +30,11 @@ using namespace std;
 
 #define DEFAULT_W 500
 #define DEFAULT_H 500
+
+enum {
+    TEX_MANDRILL,
+    TEX_CHECKERS
+};
 
 Model *m;
 Camera *camera;
@@ -71,6 +77,8 @@ struct options {
     float near;
     float far;
     int smooth_shading;
+    int textures_on;
+    int texture;
 } options;
 int ui_win[2];
 void ui_create();
@@ -83,6 +91,6 @@ GLfloat light_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
 GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
 GLfloat light_position[] = { 1000, 1000, 1000, 1.0 };
 
-int main(int argc, char *argv[]);
+int main(int argc, char **argv);
 
 #endif

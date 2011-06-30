@@ -70,25 +70,54 @@ void opengl_reshape(int w, int h)
 
 void opengl_draw_model(Model *m)
 {
+    if (options.textures_on && m->hasTexture) {
+        glEnable(GL_TEXTURE_2D);
+        TextureManager::Inst()->BindTexture(options.texture);
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    }
     glBegin(GL_TRIANGLES);
     if (options.smooth_shading) {
         for (int i = 0; i < m->triangles_count; i++) {
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[0][0], m->triangles[i].text_coord[0][1]);
+            }
             glNormal3f(m->triangles[i].normal[0].x, m->triangles[i].normal[0].y, -m->triangles[i].normal[0].z);
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
+
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[1][0], m->triangles[i].text_coord[1][1]);
+            }
             glNormal3f(m->triangles[i].normal[1].x, m->triangles[i].normal[1].y, -m->triangles[i].normal[1].z);
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
+
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[2][0], m->triangles[i].text_coord[2][1]);
+            }
             glNormal3f(m->triangles[i].normal[2].x, m->triangles[i].normal[2].y, -m->triangles[i].normal[2].z);
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
         }
     } else {
         for (int i = 0; i < m->triangles_count; i++) {
             glNormal3f(m->triangles[i].face_normal.x, m->triangles[i].face_normal.y, -m->triangles[i].face_normal.z);
+
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[0][0], m->triangles[i].text_coord[0][1]);
+            }
             glVertex3f(m->triangles[i].v0.x, m->triangles[i].v0.y, m->triangles[i].v0.z);
+
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[1][0], m->triangles[i].text_coord[1][1]);
+            }
             glVertex3f(m->triangles[i].v1.x, m->triangles[i].v1.y, m->triangles[i].v1.z);
+
+            if (options.textures_on && m->hasTexture) {
+                glTexCoord2f(m->triangles[i].text_coord[2][0], m->triangles[i].text_coord[2][1]);
+            }
             glVertex3f(m->triangles[i].v2.x, m->triangles[i].v2.y, m->triangles[i].v2.z);
         }
     }
     glEnd();
+    glDisable(GL_TEXTURE_2D);
 }
 
 
@@ -349,6 +378,12 @@ void ui_create()
     GLUI_Spinner *b = glui->add_spinner("B:", GLUI_SPINNER_FLOAT, &options.b, 0, ui_callback);
     b->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
 
+    GLUI_Panel *textures_panel = glui->add_panel("Textures");
+    glui->add_checkbox_to_panel(textures_panel, "On", &options.textures_on, 0, ui_callback);
+    GLUI_RadioGroup *textures = glui->add_radiogroup_to_panel(textures_panel, &options.texture, 0, ui_callback);
+    glui->add_radiobutton_to_group(textures, "Mandrill");
+    glui->add_radiobutton_to_group(textures, "Checkers");
+
     glui->add_separator();
     glui->add_statictext("Model File");
     ui_file = glui->add_edittext("Path:", GLUI_EDITTEXT_TEXT, NULL, UI_READ_FILE, ui_callback);
@@ -420,7 +455,8 @@ void ui_keyboard(unsigned char key, int x, int y)
 
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv)
+{
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
@@ -433,6 +469,9 @@ int main(int argc, char *argv[]) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glEnable(GL_DEPTH_TEST);
     glClearColor(BG_COLOR_R, BG_COLOR_G, BG_COLOR_B, BG_COLOR_A);
+
+    TextureManager::Inst()->LoadTexture("models/mandrill_256.jpg", TEX_MANDRILL);
+    TextureManager::Inst()->LoadTexture("models/checker_8x8.jpg", TEX_CHECKERS);
 
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowPosition(DEFAULT_W, 0);
@@ -459,6 +498,7 @@ int main(int argc, char *argv[]) {
     ui_create();
 
     camera = new Camera();
+
 
     glutMainLoop();
     return 0;
