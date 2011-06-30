@@ -36,6 +36,12 @@ enum {
     TEX_CHECKERS
 };
 
+enum {
+    TEX_NNEIGHBORS,
+    TEX_BILINEAR,
+    TEX_MIPMAPPING
+};
+
 Model *m;
 Camera *camera;
 
@@ -79,6 +85,7 @@ struct options {
     int smooth_shading;
     int textures_on;
     int texture;
+    int texture_type;
 } options;
 int ui_win[2];
 void ui_create();

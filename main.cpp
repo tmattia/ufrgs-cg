@@ -72,9 +72,26 @@ void opengl_draw_model(Model *m)
 {
     if (options.textures_on && m->hasTexture) {
         glEnable(GL_TEXTURE_2D);
+
+        switch (options.texture_type) {
+            case TEX_MIPMAPPING:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                break;
+            case TEX_BILINEAR:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                break;
+            case TEX_NNEIGHBORS:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                break;
+        }
+
         TextureManager::Inst()->BindTexture(options.texture);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     }
+
     glBegin(GL_TRIANGLES);
     if (options.smooth_shading) {
         for (int i = 0; i < m->triangles_count; i++) {
@@ -380,9 +397,13 @@ void ui_create()
 
     GLUI_Panel *textures_panel = glui->add_panel("Textures");
     glui->add_checkbox_to_panel(textures_panel, "On", &options.textures_on, 0, ui_callback);
-    GLUI_RadioGroup *textures = glui->add_radiogroup_to_panel(textures_panel, &options.texture, 0, ui_callback);
-    glui->add_radiobutton_to_group(textures, "Mandrill");
-    glui->add_radiobutton_to_group(textures, "Checkers");
+    GLUI_RadioGroup *texture_files = glui->add_radiogroup_to_panel(textures_panel, &options.texture, 0, ui_callback);
+    glui->add_radiobutton_to_group(texture_files, "Mandrill");
+    glui->add_radiobutton_to_group(texture_files, "Checkers");
+    GLUI_RadioGroup *texture_types = glui->add_radiogroup_to_panel(textures_panel, &options.texture_type, 0, ui_callback);
+    glui->add_radiobutton_to_group(texture_types, "Nearest Neighbors");
+    glui->add_radiobutton_to_group(texture_types, "Bilinear Re-sampling");
+    glui->add_radiobutton_to_group(texture_types, "Mip-mapping");
 
     glui->add_separator();
     glui->add_statictext("Model File");
@@ -490,8 +511,8 @@ int main(int argc, char **argv)
     opengl_h = DEFAULT_H;
 
     options.r = 1.0;
-    options.g = 0.0;
-    options.b = 0.0;
+    options.g = 1.0;
+    options.b = 1.0;
     options.near = 1.0;
     options.far = 3000.0;
 
