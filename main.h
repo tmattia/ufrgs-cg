@@ -65,6 +65,40 @@ void close2gl_draw_model(Model *m);
 void close2gl_raster(float *v0, float *v1, float *v2);
 void close2gl_raster_point(int x, int y, int z);
 void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1);
+struct edge {
+    void set(float top_x, float top_y, float top_z, float bottom_x, float bottom_y, float bottom_z);
+    inline int step(void);
+    float x, x_step; // fractional x and dx/dy
+    int y, height; // current y and vert count
+    float one_over_z, one_over_z_step; // 1/z and step
+    float u_over_z, u_over_z_step; // 1/u and step
+    float v_over_z, v_over_z_step; // 1/v and step
+};
+inline int edge::step(void)
+{
+    x += x_step; y++; height--;
+    one_over_z += one_over_z_step;
+    u_over_z += u_over_z_step;
+    v_over_z += v_over_z_step;
+    return height;
+}
+void edge::set(float top_x, float top_y, float top_z, float bottom_x, float bottom_y, float bottom_z)
+{
+    y = top_y;
+    int y_end = bottom_y;
+    height = y_end - y;
+
+    float y_prestep = y - top_y;
+
+    float real_height = bottom_y - top_y;
+    float real_width = bottom_x - top_x;
+
+    x = ((real_width * y_prestep) / real_height) + top_x;
+    x_step = real_width / real_height;
+    float x_prestep = x - top_x;
+
+}
+void close2gl_raster_triangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
 
 void close2gl_reset_buffers();
 void close2gl_set_modelview();

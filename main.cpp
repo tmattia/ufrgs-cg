@@ -269,6 +269,11 @@ void close2gl_raster(float *v0, float *v1, float *v2)
             close2gl_raster_line((int) v1[0], (int) v1[1], (int) v1[2],
                     (int) v2[0], (int) v2[1], (int) v2[2]);
             break;
+        case 2:
+            // TODO should we really cast to int here?
+            close2gl_raster_triangle((int) v0[0], (int) v0[1], (int) v0[2],
+                    (int) v1[0], (int) v1[1], (int) v1[2],
+                    (int) v2[0], (int) v2[1], (int) v2[2]);
     }
 }
 
@@ -304,6 +309,122 @@ void close2gl_raster_line(int x0, int y0, int z0,
     close2gl_raster_point(x0, y0, z0);
     for (int i = 0; i < points; i++) {
         close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i);
+    }
+}
+
+void close2gl_raster_triangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2)
+{
+    int avg_z = (z0 + z1 + z2) / 3; // TODO fix this
+
+    int top, middle, bottom;
+    int middle_compare, bottom_compare;
+
+    edge *p_left;
+    edge *p_right;
+
+    if (y0 < y1) {
+        if (y2 < y0) {
+            top = 2; middle = 0; bottom = 1;
+            middle_compare = 0; bottom_compare = 0;
+        } else {
+            top = 0;
+            if (y1 < y2) {
+                middle = 1; bottom = 2;
+                middle_compare = 1; bottom_compare = 2;
+            } else {
+                middle = 2; bottom = 1;
+                middle_compare = 2; bottom_compare = 1;
+            }
+        }
+    } else {
+        if (y2 < y1) {
+            top = 2; middle = 1; bottom = 0;
+            middle_compare = 1; bottom_compare = 0;
+        } else {
+            top = 1;
+            if (y0 < y2) {
+                middle = 0; bottom = 2;
+                middle_compare = 3; bottom_compare = 2;
+            } else {
+                middle = 2; bottom = 0;
+                middle_compare = 2; bottom_compare = 3;
+            }
+        }
+    }
+
+    edge top_to_bottom, top_to_middle, middle_to_bottom;
+    if (top == 0) {
+        if (bottom == 1) {
+            // top = 0; middle = 2; bottom = 1;
+            top_to_bottom.set(x0, y0, z0, x1, y1, z1);
+            top_to_middle.set(x0, y0, z0, x2, y2, z2);
+            middle_to_bottom.set(x2, y2, z2, x1, y1, z1);
+        } else {
+            // top = 0; middle = 1; bottom = 2;
+            top_to_bottom.set(x0, y0, z0, x2, y2, z2);
+            top_to_middle.set(x0, y0, z0, x1, y1, z1);
+            middle_to_bottom.set(x1, y1, z1, x2, y2, z2);
+        }
+    } else if (top == 1) {
+        if (bottom == 0) {
+            // top = 1; middle = 2; bottom = 0;
+            top_to_bottom.set(x1, y1, z1, x0, y0, z0);
+            top_to_middle.set(x1, y1, z1, x2, y2, z2);
+            middle_to_bottom.set(x2, y2, z2, x0, y0, z0);
+        } else {
+            // top = 1; middle = 0; bottom = 2;
+            top_to_bottom.set(x1, y1, z1, x2, y2, z2);
+            top_to_middle.set(x1, y1, z1, x0, y0, z0);
+            middle_to_bottom.set(x0, y0, z0, x2, y2, z2);
+        }
+    } else {
+        if (bottom == 0) {
+            // top = 2; middle = 1; bottom = 0;
+            top_to_bottom.set(x2, y2, z2, x0, y0, z0);
+            top_to_middle.set(x2, y2, z2, x1, y1, z1);
+            middle_to_bottom.set(x1, y1, z1, x0, y0, z0);
+        } else {
+            // top = 2; middle = 0; bottom = 1;
+            top_to_bottom.set(x2, y2, z2, x1, y1, z1);
+            top_to_middle.set(x2, y2, z2, x0, y0, z0);
+            middle_to_bottom.set(x0, y0, z0, x1, y1, z1);
+        }
+    }
+
+    int middle_is_left;
+
+    if (bottom_compare > middle_compare) {
+        middle_is_left = 0;
+        p_left = &top_to_bottom;
+        p_right = &top_to_middle;
+    } else {
+        middle_is_left = 1;
+        p_left = &top_to_middle;
+        p_right = &top_to_bottom;
+    }
+
+    int height = top_to_middle.height;
+
+    while (height--) {
+        close2gl_raster_line(p_left->x, p_left->y, avg_z, p_right->x, p_right->y, avg_z);
+        top_to_middle.step();
+        top_to_bottom.step();
+    }
+
+    height = middle_to_bottom.height;
+
+    if (middle_is_left) {
+        p_left = &middle_to_bottom;
+        p_right = &top_to_bottom;
+    } else {
+        p_left = &top_to_bottom;
+        p_right = &middle_to_bottom;
+    }
+
+    while (height--) {
+        close2gl_raster_line(p_left->x, p_left->y, avg_z, p_right->x, p_right->y, avg_z);
+        middle_to_bottom.step();
+        top_to_bottom.step();
     }
 }
 
