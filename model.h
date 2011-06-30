@@ -4,6 +4,7 @@
 #include <vector3f.h>
 
 #define MAX_TRIANGLES 100000
+#define MAX_MATERIALS 100000
 
 using namespace std;
 
@@ -60,6 +61,12 @@ class Model
 
         bool hasTexture;
 
+        vector3f ambient[MAX_MATERIALS],
+                 diffuse[MAX_MATERIALS],
+                 specular[MAX_MATERIALS];
+
+        float shine[MAX_MATERIALS];
+
     private:
         /**
          * Reads a model file from the filesystem. Stores the model as
@@ -107,10 +114,6 @@ void Model::read_file(const char *path)
     fscanf(fp, "# triangles = %d\n", &triangles_count);
     fscanf(fp, "Material count = %d\n", &material_count);
 
-    vector3f ambient[material_count],
-             diffuse[material_count],
-             specular[material_count];
-    float shine[material_count];
     for (int i = 0; i < material_count; i++) {
         fscanf(fp, "ambient color %f %f %f\n",
                 &(ambient[i].x), &(ambient[i].y), &(ambient[i].z));

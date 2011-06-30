@@ -62,14 +62,16 @@ void close2gl_render();
 void close2gl_reshape(int w, int h);
 void close2gl_draw_model(Model *m);
 
-void close2gl_raster(float *v0, float *v1, float *v2);
-void close2gl_raster_point(int x, int y, int z);
-void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1);
+vector3f* close2gl_triangle_color(triangle t);
+void close2gl_raster(float *v0, float *v1, float *v2, vector3f *color);
+void close2gl_raster_point(int x, int y, int z, vector3f *color);
+void close2gl_raster_line(int x0, int y0, int z0, int x1, int y1, int z1, vector3f *color);
 struct edge {
     void set(float top_x, float top_y, float top_z, float bottom_x, float bottom_y, float bottom_z);
     inline int step(void);
     float x, x_step; // fractional x and dx/dy
     int y, height; // current y and vert count
+    float z, z_step;
     float one_over_z, one_over_z_step; // 1/z and step
     float u_over_z, u_over_z_step; // 1/u and step
     float v_over_z, v_over_z_step; // 1/v and step
@@ -77,6 +79,7 @@ struct edge {
 inline int edge::step(void)
 {
     x += x_step; y++; height--;
+    z += z_step;
     one_over_z += one_over_z_step;
     u_over_z += u_over_z_step;
     v_over_z += v_over_z_step;
@@ -93,12 +96,15 @@ void edge::set(float top_x, float top_y, float top_z, float bottom_x, float bott
     float real_height = bottom_y - top_y;
     float real_width = bottom_x - top_x;
 
+    z = bottom_z;
+    z_step = 0;
+
     x = ((real_width * y_prestep) / real_height) + top_x;
     x_step = real_width / real_height;
     float x_prestep = x - top_x;
 
 }
-void close2gl_raster_triangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
+void close2gl_raster_triangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, vector3f *color);
 
 void close2gl_reset_buffers();
 void close2gl_set_modelview();
@@ -129,8 +135,8 @@ GLUI_EditText *ui_file;
 
 GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
 GLfloat light_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
-GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
-GLfloat light_position[] = { 1000, 1000, 1000, 1.0 };
+GLfloat light_specular[] = { 0.1, 0.1, 0.1, 1.0 };
+GLfloat light_position[] = { 10000.0, 10000.0, 10000.0, 1.0 };
 
 int main(int argc, char **argv);
 
