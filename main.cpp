@@ -18,9 +18,14 @@ void opengl_render()
         glLightfv(GL_LIGHT0, GL_DIFFUSE, color);
         glLightfv(GL_LIGHT0, GL_SPECULAR, color);
 
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, light_ambient);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, light_diffuse);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, light_specular);
+        float ambient[] = { options.ambient, options.ambient, options.ambient };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+
+        float diffuse[] = { options.diffuse, options.diffuse, options.diffuse };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+
+        float specular[] = { options.specular, options.specular, options.specular };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
     } else {
         glDisable(GL_LIGHTING);
         glDisable(GL_LIGHT0);
@@ -197,19 +202,19 @@ vector3f* close2gl_triangle_color(triangle t)
 
         float ambient, diffuse, specular;
 
-        ambient = options.r * light_ambient[0];
-        diffuse = options.r * light_diffuse[0] * light_projection;
-        specular = options.r * light_specular[0] * reflex;
+        ambient = options.r * options.ambient;
+        diffuse = options.r * options.diffuse * light_projection;
+        specular = options.r * options.specular * reflex;
         color->x = ambient + diffuse + specular;
 
-        ambient = options.g * light_ambient[1];
-        diffuse = options.g * light_diffuse[1] * light_projection;
-        specular = options.g * light_specular[1] * reflex;
+        ambient = options.g * options.ambient;
+        diffuse = options.g * options.diffuse * light_projection;
+        specular = options.g * options.specular * reflex;
         color->y = ambient + diffuse + specular;
 
-        ambient = options.b * light_ambient[2];
-        diffuse = options.b * light_diffuse[2] * light_projection;
-        specular = options.b * light_specular[2] * reflex;
+        ambient = options.b * options.ambient;
+        diffuse = options.b * options.diffuse * light_projection;
+        specular = options.b * options.specular * reflex;
         color->z = ambient + diffuse + specular;
     } else {
         color->x = options.r;
@@ -555,8 +560,6 @@ void ui_create()
     glui->add_radiobutton_to_group(primitives, "Wireframe");
     glui->add_radiobutton_to_group(primitives, "Solid");
 
-    glui->add_checkbox("Lighting", &options.lighting, 0, ui_callback);
-    glui->add_checkbox("Smooth Shading", &options.smooth_shading, 0, ui_callback);
     glui->add_checkbox("CCW", &options.ccw, 0, ui_callback);
     glui->add_checkbox("Backface Culling", &options.backface_culling, 0, ui_callback);
 
@@ -571,13 +574,28 @@ void ui_create()
 
 
     glui->add_separator();
-    glui->add_statictext("Model Colors");
-    GLUI_Spinner *r = glui->add_spinner("R:", GLUI_SPINNER_FLOAT, &options.r, 0, ui_callback);
+    GLUI_Panel *lighting_panel = glui->add_panel("Lighting");
+    glui->add_checkbox_to_panel(lighting_panel, "On", &options.lighting, 0, ui_callback);
+    glui->add_separator_to_panel(lighting_panel);
+    GLUI_RadioGroup *shadings = glui->add_radiogroup_to_panel(lighting_panel, &options.smooth_shading, 0, ui_callback);
+    glui->add_radiobutton_to_group(shadings, "Flat Shading");
+    glui->add_radiobutton_to_group(shadings, "Gouraud Shading");
+    glui->add_separator_to_panel(lighting_panel);
+    glui->add_statictext_to_panel(lighting_panel, "Colors");
+    GLUI_Spinner *r = glui->add_spinner_to_panel(lighting_panel, "R:", GLUI_SPINNER_FLOAT, &options.r, 0, ui_callback);
     r->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
-    GLUI_Spinner *g = glui->add_spinner("G:", GLUI_SPINNER_FLOAT, &options.g, 0, ui_callback);
+    GLUI_Spinner *g = glui->add_spinner_to_panel(lighting_panel, "G:", GLUI_SPINNER_FLOAT, &options.g, 0, ui_callback);
     g->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
-    GLUI_Spinner *b = glui->add_spinner("B:", GLUI_SPINNER_FLOAT, &options.b, 0, ui_callback);
+    GLUI_Spinner *b = glui->add_spinner_to_panel(lighting_panel, "B:", GLUI_SPINNER_FLOAT, &options.b, 0, ui_callback);
     b->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+    glui->add_separator_to_panel(lighting_panel);
+    glui->add_statictext_to_panel(lighting_panel, "Properties");
+    GLUI_Spinner *ambient = glui->add_spinner_to_panel(lighting_panel, "Ambient:", GLUI_SPINNER_FLOAT, &options.ambient, 0, ui_callback);
+    ambient->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+    GLUI_Spinner *diffuse = glui->add_spinner_to_panel(lighting_panel, "Diffuse:", GLUI_SPINNER_FLOAT, &options.diffuse, 0, ui_callback);
+    diffuse->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
+    GLUI_Spinner *specular = glui->add_spinner_to_panel(lighting_panel, "Specular:", GLUI_SPINNER_FLOAT, &options.specular, 0, ui_callback);
+    specular->set_float_limits(0, 1, GLUI_LIMIT_WRAP);
 
     GLUI_Panel *textures_panel = glui->add_panel("Textures");
     glui->add_checkbox_to_panel(textures_panel, "On", &options.textures_on, 0, ui_callback);

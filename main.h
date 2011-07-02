@@ -119,6 +119,9 @@ struct options {
     float r;
     float g;
     float b;
+    float ambient;
+    float diffuse;
+    float specular;
     int camera_centered;
     float near;
     float far;
@@ -133,9 +136,6 @@ void ui_callback(int action);
 void ui_keyboard(unsigned char key, int x, int y);
 GLUI_EditText *ui_file;
 
-GLfloat light_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-GLfloat light_diffuse[] = { 0.6, 0.6, 0.6, 1.0 };
-GLfloat light_specular[] = { 0.1, 0.1, 0.1, 1.0 };
 GLfloat light_position[] = { 10000.0, 10000.0, 10000.0, 1.0 };
 
 int main(int argc, char **argv);
