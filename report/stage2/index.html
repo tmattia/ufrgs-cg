@@ -3,9 +3,6 @@
     <head>
         <title>INF01009 - Tomas Mattia</title>
         <style type="text/css" media="screen">
-            blockquote {
-                float: left;
-            }
             p.subtitle {
                 clear: both;
             }
@@ -18,24 +15,144 @@
                 <h1>INF01009 - Computa&ccedil;&atilde;o Gr&aacute;fica</h1>
                 <h2>Tomas Mattia (180687)</h2>
                 <ul>
-                    <li><a href="#trabalho-impl-2">Trabalho Implementa&ccedil;&atilde;o 2</a></li>
+                    <li><a href="#trabalho-impl-3">Trabalho Implementa&ccedil;&atilde;o 3</a></li>
                 </ul>
             </div>
 
             <div id="content">
-                <div id="trabalho-impl-2" class="trabalho">
+                <div id="trabalho-impl-3" class="trabalho">
                     <h3>Trabalho de Implementa&ccedil;&atilde;o 3</h3>
 
                     <h4>Ambiente de Desenvolvimento</h4>
                     <ul>
                         <li>Mac OS X (v10.6.6)</li>
                         <li>gcc 4.2.1</li>
+                        <li>FreeImage 3.15.0 (para manipulamento de texturas no formato JPG)</li>
                     </ul>
 
+                    <h4>Desenvolvimento</h4>
+
+                    <h5>Color e Depth buffers</h5>
+                    <p>Devido &agrave; necessidade de redimensionamento da janela e, consequentemente, do tamanho dos buffers, eles foram inicialmente implementados como <code>vector</code>s. Essa escolha resultou numa certa lentid&atilde;o no processamento da cena, ent&atilde;o a mudan&ccedil;a para arrays foi realizada. A Listagem 1 apresenta o c&oacute;digo utilizado para a gera&ccedil;&atilde;o dos buffers de cor e profundidade.</p>
+                    <blockquote>
+                        <pre>
+void close2gl_reset_buffers()
+{
+    if (close2gl_depth_buffer != NULL) {
+        delete [] close2gl_depth_buffer;
+    }
+    if (close2gl_color_buffer != NULL) {
+        delete [] close2gl_color_buffer;
+    }
+    close2gl_depth_buffer = new float[close2gl_w * close2gl_h];
+    for (int i = 0; i &lt; close2gl_w * close2gl_h; i++) close2gl_depth_buffer[i] = INT_MAX;
+    close2gl_color_buffer = new float[close2gl_w * close2gl_h * 4];
+    memset(close2gl_color_buffer, 0.0, close2gl_w * close2gl_h * 4 * sizeof(float));
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 1 - C&oacute;digo para gerenciamento dos buffers de cor e profundidade.</p>
+
+                    <h5>Shading</h5>
+                    <p>Foram implementadas apenas colora&ccedil;&atilde;o de tri&acirc;ngulos para casos onde a ilumina&ccedil;&atilde;o estava desativada ou com Flat Shading. Implementa&ccedil;&otilde;es de Gouraud Shading e Phong Shading deveriam levar em considera&ccedil;&atilde;o as normais de cada v&eacute;rtice, n&atilde;o apenas a normal da face do tri&acirc;ngulo. A Listagem 2 apresenta o c&oacute;digo utilizado para determina&ccedil;&atilde;o da cor de um tri&acirc;ngulo.</p>
+                    <blockquote>
+                        <pre>
+vector3f* close2gl_triangle_color(triangle t)
+{
+    vector3f *color = new vector3f(options.r, options.g, options.b);
+    if (options.lighting) {
+        vector3f light(light_position[0], light_position[1], light_position[2]);
+        light = light - t.v0;
+        light.normalize();
+
+        vector3f normal = t.face_normal;
+        normal.normalize();
+        float light_projection = dotProduct(normal, light);
+
+        vector3f reflection = (2 * light_projection * normal) - light;
+        reflection.normalize();
+
+        vector3f viewer = camera->position - t.v0;
+        viewer.normalize();
+
+        float reflex = dotProduct(viewer, reflection);
+
+        float ambient, diffuse, specular;
+
+        ambient = options.r * options.ambient;
+        diffuse = options.r * options.diffuse * light_projection;
+        specular = options.r * options.specular * reflex;
+        color->x = ambient + diffuse + specular;
+
+        ambient = options.g * options.ambient;
+        diffuse = options.g * options.diffuse * light_projection;
+        specular = options.g * options.specular * reflex;
+        color->y = ambient + diffuse + specular;
+
+        ambient = options.b * options.ambient;
+        diffuse = options.b * options.diffuse * light_projection;
+        specular = options.b * options.specular * reflex;
+        color->z = ambient + diffuse + specular;
+    } else {
+        color->x = options.r;
+        color->y = options.g;
+        color->z = options.b;
+    }
+
+    return color;
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 2 - C&oacute;digo para determina&ccedil;&atilde;o da cor de um tri&acirc;ngulo.</p>
+
+                    <h5>Rasteriza&ccedil;&atilde;o</h5>
+                    <p>A Listagem 3 apresenta o c&oacute;digo para rasteriza&ccedil;&atilde;o de pontos.</p>
+                    <blockquote>
+                        <pre>
+void close2gl_raster_point(int x, int y, int z, vector3f *color)
+{
+    int pos = 4 * (x + y * close2gl_w);
+    if (z < close2gl_depth_buffer[pos / 4]) {
+        close2gl_depth_buffer[pos / 4] = z;
+        close2gl_color_buffer[pos] = color->x;
+        close2gl_color_buffer[pos + 1] = color->y;
+        close2gl_color_buffer[pos + 2] = color->z;
+        close2gl_color_buffer[pos + 3] = 1.0;
+    }
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 3 - C&oacute;digo para rasteriza&ccedil;&atilde;o de um ponto.</p>
+
+                    <p>A Listagem 4 apresenta o c&oacute;digo para rasteriza&ccedil;&atilde;o de linhas.</p>
+                    <blockquote>
+                        <pre>
+void close2gl_raster_line(int x0, int y0, int z0,
+        int x1, int y1, int z1, vector3f *color)
+{
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int dz = z1 - z0;
+
+    int points = max(abs(dx), abs(dy));
+
+    float inc_x = dx / (float) points;
+    float inc_y = dy / (float) points;
+    float inc_z = dz / (float) points;
+
+    close2gl_raster_point(x0, y0, z0, color);
+    for (int i = 0; i < points; i++) {
+        close2gl_raster_point(x0 + inc_x * i, y0 + inc_y * i, z0 + inc_z * i, color);
+    }
+}
+                        </pre>
+                    </blockquote>
+                    <p class="subtitle">Listagem 4 - C&oacute;digo para rasteriza&ccedil;&atilde;o de uma linha entre dois pontos.</p>
+
+                    <p>V&aacute;rios algoritmos de rasteriza&ccedil;&atilde;o de tri&acirc;ngulos foram testados. Alguns eram relativamente simples, mas sofriam com problemas nos limites do tri&acirc;ngulo. Visando a implementa&ccedil;&atilde;o de interpola&ccedil;&atilde;o perspectivamente correta de texturas, o algoritmo para rasteriza&ccedil;&atilde;o de tri&acirc;ngulos escolhido foi o descrito em [1].</p>
 
                     <h4>Resultados</h4>
 
-                    <h5>Compara&ccedil;&otilde;es</h5>
                     <p><img src="opengl-points.png" alt="OpenGL - Points" /><img src="close2gl-points.png" alt="Close2GL - Points" /></p>
                     <p class="subtitle">Compara&ccedil;&atilde;o 1 - Renderiza&ccedil;&atilde;o de pontos (point)</p>
 
@@ -51,7 +168,9 @@
                     <p><img src="opengl-flat-shading.png" alt="OpenGL - Flat Shading" /><img src="close2gl-flat-shading.png" alt="Close2GL - Flat Shading" /></p>
                     <p class="subtitle">Compara&ccedil;&atilde;o 5 - Flat Shading</p>
 
-                    <h5>Implementa&ccedil;&otilde;es</h5>
+                    <p><img src="close2gl-zbuffer.png" alt="Close2GL - Z-Buffer" /><img src="close2gl-wbuffer.png" alt="Close2GL - W-Buffer" /></p>
+                    <p class="subtitle">Compara&ccedil;&atilde;o 6 - &Agrave; esquerda, Close2GL utilizando Z-Buffer. &Agrave; direita, Close2GL utilizando W-Buffer. Note que na primeira imagem ocorrem problemas devido &agrave; resolu&ccedil;&atilde;o do Z-buffer. Na imagem da direita, esses problemas foram resolvidos com a utiliza&ccedil;&atilde;o de W-Buffer.</p>
+
                     <p><img src="close2gl-resized-window.png" alt="Close2GL - Resized Window" /></p>
                     <p class="subtitle">Imagem 1 - Redimensionamento de janela em Close2GL</p>
 
@@ -67,13 +186,14 @@
                     <p><img src="opengl-mipmapping.png" alt="OpenGL - Textures - Mip-mapping" /></p>
                     <p class="subtitle">Imagem 5 - Texturas com Mip-mapping em OpenGL</p>
 
-
-
-
-
+                    <p><img src="gui.png" alt="GUI" /></p>
+                    <p class="subtitle">Imagem 5 - GUI</p>
 
                     <h4>C&oacute;digo-fonte</h4>
                     <p><a href="http://github.com/tmattia/ufrgs-cg">http://github.com/tmattia/ufrgs-cg</a></p>
+
+                    <h4>Refer&ecirc;ncias</h4>
+                    <p>[1] <a href="http://chrishecker.com/images/9/97/Gdmtex2.pdf">http://chrishecker.com/images/9/97/Gdmtex2.pdf</a></p>
                 </div>
             </div>
             <div id="footer"><address>tmattia [at] inf [dot] ufrgs [dot] br</address></div>
